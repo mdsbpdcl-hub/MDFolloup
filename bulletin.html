@@ -68,7 +68,7 @@ h2.od{border-top-color:var(--er)}h2.od span{color:var(--er)}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(160%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;transition:transform .18s;z-index:9}
 .toast{visibility:hidden}.toast.show{transform:translateX(-50%) translateY(0);visibility:visible}
 .toast button{background:none;border:0;color:#9fe3d7;font-weight:700;margin-left:10px;cursor:pointer}
-@media(max-width:760px){.sheet{margin:0;border:0;padding:14px}.mast h1{font-size:30px}.strap{grid-template-columns:repeat(2,1fr)}.tool input{width:100%}}
+@media(max-width:760px){.sheet{margin:0;border:0;padding:14px}.mast h1{font-size:30px}.strap{grid-template-columns:repeat(2,1fr)!important}.tool input{width:100%}}
 @media print{.more{display:none!important}body{background:#fff}.sheet{border:0;margin:0;padding:0;max-width:none}.tool,.acts,.nb,.toast,.noprint{display:none!important}
   .cols{columns:2}.body{display:block}@page{size:A4;margin:12mm}}
 </style>
@@ -147,11 +147,15 @@ function render(){if(!$('#secs'))return;const td=today(),all=load(K.t,[]);
   const by=(a,b)=>a.due.localeCompare(b.due)||(b.urgent?1:0)-(a.urgent?1:0)||(a.created||'').localeCompare(b.created||'');
   const S=[['od','Overdue',open.filter(t=>t.due<td).sort(by)],['td','Due today',open.filter(t=>t.due===td).sort(by)],
     ['wk','This week',open.filter(t=>t.due>td&&t.due<=wk).sort(by)],['lt','Later',open.filter(t=>t.due>wk).sort(by)]];
-  $('#strap').innerHTML=S.map(([k,n,a])=>`<a href="#s-${k}" class="${k}"><b>${a.length}</b><span>${n}</span></a>`).join('');
-  $('#dl-sum').textContent=`${open.length} open · ${S[0][2].length} overdue · ${S[1][2].length} due today`;
-  $('#secs').innerHTML=S.map(([k,n,a])=>k==='lt'&&!a.length?'':
+  const shown=S.filter(x=>x[2].length);   // only sections that have items
+  $('#strap').style.gridTemplateColumns=`repeat(${Math.max(shown.length,1)},1fr)`;
+  $('#strap').style.display=shown.length?'':'none';
+  $('#strap').innerHTML=shown.map(([k,n,a])=>`<a href="#s-${k}" class="${k}"><b>${a.length}</b><span>${n}</span></a>`).join('');
+  $('#dl-sum').textContent=[[open.length,'open'],[S[0][2].length,'overdue'],[S[1][2].length,'due today']].filter(x=>x[0]).map(x=>x.join(' ')).join(' · ');
+  $('#secs').innerHTML=shown.length?shown.map(([k,n,a])=>
     `<section id="s-${k}"><h2 class="${k}"><span>${n}</span><small>${a.length}</small></h2>
-     ${a.length?`<div class="cols">${a.map(t=>story(t,false)).join('')}</div>`:`<div class="empty">${k==='od'?'Nothing overdue.':k==='td'?'Nothing due today.':'Nothing this week.'}</div>`}</section>`).join('');
+     <div class="cols">${a.map(t=>story(t,false)).join('')}</div></section>`).join('')
+    :`<div class="empty" style="text-align:center;padding:30px">${query||office?'No follow-ups match this search.':'No pending follow-ups.'}</div>`;
   badge();
   if(noteId){const i=document.querySelector(`[data-note="${CSS.escape(noteId)}"]`);if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
 }
