@@ -97,6 +97,7 @@ textarea:focus,input:focus,select:focus{border-color:var(--ac);box-shadow:0 0 0 
 .tag.u{display:inline-block;padding:1px 8px;border-radius:99px;background:var(--ert);color:var(--er);font-weight:700;font-size:12px}
 .note{display:flex;gap:6px;margin-bottom:8px}.note input{flex:1;min-height:40px}
 .acts{display:flex;gap:6px;flex-wrap:wrap}
+.ab.wa{display:inline-flex;align-items:center;text-decoration:none;color:#128c4a;border-color:#bfe5cd;background:#f1fbf5}
 .ab{min-height:40px;padding:6px 12px;border:1px solid var(--fb);background:#fff;border-radius:8px;cursor:pointer;font-weight:600}
 .toast .ub{background:none;border:0;color:#9fe3d7;font-weight:700;margin-left:10px;padding:6px;cursor:pointer;font-size:14px}
 @media(max-width:480px){.det{padding-left:14px}}
@@ -319,6 +320,14 @@ function counts(){const td=today();let due=0,up=0,open=0,done=0;
   tasks.forEach(t=>{if(isOpen(t)){open++;if(t.due<=td)due++;else up++}else done++});
   $('#c-up').textContent=up;$('#c-open').textContent=open;$('#c-done').textContent=done;
   $('#dueN').textContent=due||'';return due}
+
+// WhatsApp note: task text + "Ref: <who it came from>" + blank line + your note
+function waText(t){const f=(t.from||'').trim();const ref=f.includes(' – ')?f.split(' – ').slice(1).join(' – ').trim():f;
+  const note=(t.remarks||'').trim();   // your note / instructions, after one blank line
+  return t.text.trim()+(ref&&ref!=='Self'?'\nRef: '+ref:'')+(note?'\n\n'+note:'')}
+function waLink(t){const m=(t.name||'').replace(/[\s-]/g,'').match(/(?:\+?91)?([6-9]\d{9})(?!\d)/);
+  return 'https://wa.me/'+(m?'91'+m[1]:'')+'?text='+encodeURIComponent(waText(t))}
+const WA_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right:5px"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2.1.7 2.8.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>';
 const openIds=new Set();
 const CHECK='<i><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></i>';
 const when=iso=>{const d=new Date(iso);return isNaN(d)?'':d.toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})};
@@ -336,7 +345,7 @@ function renderList(){counts();const td=today(),q=$('#q').value.trim().toLowerCa
     const dl=row('Office',esc(t.org))+row('From',esc(t.from))+row('Name / note',esc(t.name))+row('Came by',esc(t.source))+
       row('Added',esc(when(t.created)))+row('Follow up by',esc(fmt(t.due)))+row('Done on',t.doneOn?esc(fmt(t.doneOn)):'')+
       row('Priority',t.urgent?'<span class="tag u">Urgent</span>':'');
-    const acts=o?`<button class="ab" data-a="s1">+1 day</button><button class="ab" data-a="s7">+1 week</button><button class="ab" data-a="cp">Copy</button>`
+    const acts=o?`<button class="ab" data-a="s1">+1 day</button><button class="ab" data-a="s7">+1 week</button><button class="ab" data-a="cp">Copy</button><a class="ab wa" href="${esc(waLink(t))}" target="_blank" rel="noopener">${WA_ICON}WhatsApp</a>`
                 :`<button class="ab" data-a="cp">Copy</button>`;
     return `<div class="item ${cls}" data-id="${esc(t.id)}">
       <div class="ih" data-a="exp"><button class="ck" data-a="tog" aria-label="${o?'Mark done':'Mark not done'}">${CHECK}</button>
@@ -355,7 +364,7 @@ $('#list').onclick=e=>{const it=e.target.closest('.item');if(!it)return;const t=
   if(e.target.closest('input'))return;
   const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
   if(a==='exp'){openIds.has(t.id)?openIds.delete(t.id):openIds.add(t.id);it.classList.toggle('ex');return}
-  if(a==='cp'){navigator.clipboard?.writeText(t.text).then(()=>toast('Copied'));return}
+  if(a==='cp'){navigator.clipboard?.writeText(waText(t)).then(()=>toast('Copied for WhatsApp'));return}
   if(a==='tog'){const prev={status:t.status,doneOn:t.doneOn,due:t.due};
     const undo=()=>{change(t,{...prev},'Restored');renderList()};
     if(isOpen(t)){it.classList.add('leaving');change(t,{status:'Done',doneOn:today()},'Marked done',undo)}

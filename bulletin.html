@@ -57,6 +57,7 @@ h2.od{border-top-color:var(--er)}h2.od span{color:var(--er)}
 .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .ab{min-height:30px;padding:3px 10px;border:1px solid var(--fb);background:#fff;border-radius:6px;cursor:pointer;font-size:12.5px;font-weight:600}
 .ab:hover{border-color:var(--ac);color:var(--ac2)}
+.ab.wa{display:inline-flex;align-items:center;text-decoration:none;color:#128c4a;border-color:#bfe5cd;background:#f1fbf5}
 .ab.dsp{background:var(--ac);border-color:var(--ac);color:#fff}.ab.dsp:hover{background:var(--ac2);color:#fff}
 .nb{display:flex;gap:6px;margin-top:8px}.nb input{flex:1;min-height:32px;border:1px solid var(--fb);border-radius:6px;padding:4px 8px;outline:0}
 .nb input:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acl)}
@@ -125,6 +126,14 @@ function shell(){
   render();
 }
 
+
+// WhatsApp note: task text + "Ref: <who it came from>" + blank line + your note
+function waText(t){const f=(t.from||'').trim();const ref=f.includes(' – ')?f.split(' – ').slice(1).join(' – ').trim():f;
+  const note=(t.remarks||'').trim();   // your note / instructions, after one blank line
+  return t.text.trim()+(ref&&ref!=='Self'?'\nRef: '+ref:'')+(note?'\n\n'+note:'')}
+function waLink(t){const m=(t.name||'').replace(/[\s-]/g,'').match(/(?:\+?91)?([6-9]\d{9})(?!\d)/);
+  return 'https://wa.me/'+(m?'91'+m[1]:'')+'?text='+encodeURIComponent(waText(t))}
+const WA_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right:5px"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2.1.7 2.8.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>';
 function story(t,done){const n=diff(t.due),lines=t.text.trim().split('\n');let head=lines[0],rest=lines.slice(1).join('\n').trim();
   const long=head.length>140||rest.split('\n').length>4||rest.length>320;
   if(head.length>140){rest=(head.slice(110)+'\n'+rest).trim();head=head.slice(0,110).replace(/\s+\S*$/,'')+'…'}
@@ -133,7 +142,7 @@ function story(t,done){const n=diff(t.due),lines=t.text.trim().split('\n');let h
     t.org?`<span>${esc(t.org==='Energy'?'Energy Dept':t.org)}</span>`:''].join('');
   const meta=[t.from&&'From '+esc(t.from),t.source&&'by '+esc(t.source),t.name&&esc(t.name),'added '+esc(when(t.created))].filter(Boolean).join(' · ');
   const acts=done?`<button class="ab" data-a="re">Restore</button>`
-    :`<button class="ab dsp" data-a="dsp">✓ Dispose</button><button class="ab" data-a="note">${t.remarks?'Edit note':'Add note'}</button><button class="ab" data-a="d1">+1 day</button><button class="ab" data-a="d7">+1 week</button><button class="ab" data-a="cp">Copy</button>`;
+    :`<button class="ab dsp" data-a="dsp">✓ Dispose</button><button class="ab" data-a="note">${t.remarks?'Edit note':'Add note'}</button><button class="ab" data-a="d1">+1 day</button><button class="ab" data-a="d7">+1 week</button><button class="ab" data-a="cp">Copy</button><a class="ab wa" href="${esc(waLink(t))}" target="_blank" rel="noopener">${WA_ICON}WhatsApp</a>`;
   const nb=noteId===t.id?`<div class="nb"><input data-note="${esc(t.id)}" value="${esc(t.remarks)}" placeholder="Note, e.g. report received / reply sent"><button class="ab dsp" data-a="ns">Save</button><button class="ab" data-a="nx">Cancel</button></div>`:'';
   return `<article class="story${done?' done':''}${openIds.has(t.id)?' open':''}" data-id="${esc(t.id)}">
     <div class="kick">${kick}</div><h3>${esc(head)}</h3>${rest?`<div class="body">${esc(rest)}</div>`:''}
@@ -169,7 +178,7 @@ function saveNote(id,v){noteId=null;const t=load(K.t,[]).find(x=>x.id===id);if(t
 function onClick(e){const s=e.target.closest('.story');if(!s)return;const id=s.dataset.id,b=e.target.closest('[data-a]');
   if(!b){if(e.target.closest('.nb,.acts')||getSelection().toString())return;openIds.has(id)?openIds.delete(id):openIds.add(id);s.classList.toggle('open');return}
   const t=load(K.t,[]).find(x=>x.id===id);if(!t)return;const a=b.dataset.a;
-  if(a==='cp'){navigator.clipboard?.writeText(t.text).then(()=>toast('Copied'));return}
+  if(a==='cp'){navigator.clipboard?.writeText(waText(t)).then(()=>toast('Copied for WhatsApp'));return}
   if(a==='note'){noteId=id;render();return}
   if(a==='nx'){noteId=null;render();return}
   if(a==='ns'){saveNote(id,s.querySelector('[data-note]').value);return}
