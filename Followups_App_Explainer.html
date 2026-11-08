@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Follow-ups App Explainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f9fb;--card:#fff;--ink:#1f2933;--mu:#5d6876;--fa:#8b95a3;--ln:#e3e8ee;--ac:#0f8a7e;--ac2:#0b6f66;--act:#e7f5f2;--acl:#cfe9e3;
+  --code:#f3f6f8;--codeink:#22303c;--d:#2f79cf;--dt:#edf4fd;--b:#8a5a00;--bt:#fff7e3;--er:#b3261e;--ert:#fdeeed;--ok:#1a7f45;--okt:#e9f7ef}
+[data-theme=dark]{--bg:#12171c;--card:#1a2128;--ink:#e6ebf0;--mu:#a3adb8;--fa:#7d8792;--ln:#2a333c;--ac:#3cc0b0;--ac2:#62d3c5;--act:#14302d;--acl:#1f4a45;
+  --code:#0f1418;--codeink:#d6e2ea;--d:#7fb2ee;--dt:#16263a;--b:#e2b45c;--bt:#2c2414;--er:#ef7b73;--ert:#3a1d1b;--ok:#6fd19a;--okt:#15301f}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "IBM Plex Sans","Segoe UI",system-ui,sans-serif;-webkit-text-size-adjust:100%}
+h1,h2,h3,h4,.nav a,.tile b,.btn{font-family:Outfit,"Segoe UI",sans-serif}
+a{color:var(--ac2)}
+code,pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:13.5px}
+code{background:var(--code);color:var(--codeink);padding:1px 5px;border-radius:4px;word-break:break-word}
+pre{background:var(--code);color:var(--codeink);padding:12px 14px;border-radius:10px;overflow-x:auto;line-height:1.5;border:1px solid var(--ln);margin:10px 0 14px}
+pre code{padding:0;background:none}
+.c{color:var(--fa)}                     /* comment in code */
+/* layout */
+.top{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--ln)}
+.bar{display:flex;align-items:center;gap:10px;padding:8px 14px;max-width:1240px;margin:0 auto}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--act);display:grid;place-items:center;flex:none}
+.bar b{font:700 16px Outfit,sans-serif;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{border:1px solid var(--ln);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 11px;cursor:pointer;font-weight:600;font-size:14px}
+.nav{display:flex;gap:6px;overflow-x:auto;padding:0 14px 8px;max-width:1240px;margin:0 auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav a{flex:none;text-decoration:none;color:var(--mu);font-weight:600;font-size:14px;padding:6px 11px;border-radius:99px;border:1px solid var(--ln);background:var(--card)}
+.nav a.on{background:var(--act);color:var(--ac2);border-color:var(--acl)}
+.wrap{max-width:1240px;margin:0 auto;padding:0 14px}
+main{max-width:820px;padding:4px 0 60px}
+@media(min-width:1060px){
+  .nav{display:none}
+  .wrap{display:grid;grid-template-columns:210px 1fr;gap:34px}
+  .rail{display:block!important;position:sticky;top:70px;align-self:start;max-height:calc(100vh - 90px);overflow:auto;padding-top:22px}
+  .rail a{display:block;text-decoration:none;color:var(--mu);font:600 14.5px Outfit,sans-serif;padding:6px 10px;border-left:3px solid transparent}
+  .rail a.on{color:var(--ac2);border-left-color:var(--ac);background:var(--act)}
+}
+.rail{display:none}
+section{padding-top:26px}
+h1{font-size:30px;line-height:1.2;margin:18px 0 6px}
+h2{font-size:24px;margin:8px 0 10px;padding-top:14px;border-top:2px solid var(--ln)}
+h3{font-size:19px;margin:22px 0 6px}
+h4{font-size:16px;margin:16px 0 4px}
+p{margin:8px 0 12px}
+.sub{color:var(--mu);margin-top:0}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:14px 16px;margin:12px 0}
+/* tags */
+.tag{display:inline-block;font:700 11px/1.6 "IBM Plex Sans",sans-serif;padding:0 6px;border-radius:4px;vertical-align:2px;margin-right:4px;letter-spacing:.3px}
+.tag.d{background:var(--dt);color:var(--d)}.tag.b{background:var(--bt);color:var(--b)}
+.key{display:flex;flex-wrap:wrap;gap:10px 18px;font-size:14px;color:var(--mu)}
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0}
+@media(min-width:640px){.tiles{grid-template-columns:repeat(4,1fr)}}
+.tile{background:var(--card);border:1px solid var(--ln);border-left:4px solid var(--ac);border-radius:10px;padding:10px 12px}
+.tile b{display:block;font-size:26px;line-height:1.15;color:var(--ac2)}
+.tile span{font-size:13px;color:var(--mu)}
+/* tables */
+.tw{overflow-x:auto;margin:10px 0 14px;border:1px solid var(--ln);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--card)}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--ln);vertical-align:top}
+th{background:var(--act);color:var(--ac2);font-family:Outfit,sans-serif;font-weight:600;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td code{white-space:nowrap}
+/* flow diagram */
+.flow{display:flex;flex-direction:column;align-items:stretch;gap:0;margin:14px 0}
+.node{background:var(--card);border:1.5px solid var(--ln);border-radius:12px;padding:10px 12px}
+.node b{font-family:Outfit,sans-serif;font-size:16px}
+.node small{display:block;color:var(--mu);font-size:13.5px;line-height:1.45;margin-top:2px}
+.node.ph{border-color:var(--ac)}.node.sv{border-color:var(--d)}.node.sh{border-color:var(--ok)}
+.arrow{text-align:center;color:var(--fa);font-size:13px;line-height:1.3;padding:4px 0}
+.arrow::before{content:"↓";display:block;font-size:20px;color:var(--ac)}
+.row2{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:640px){.row2{grid-template-columns:1fr 1fr}}
+/* steps */
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:10px 0}
+ol.steps li{counter-increment:s;position:relative;padding:0 0 12px 40px}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--act);color:var(--ac2);font:700 14px/28px Outfit,sans-serif;text-align:center}
+ol.steps li::after{content:"";position:absolute;left:13px;top:30px;bottom:2px;width:2px;background:var(--ln)}
+ol.steps li:last-child::after{display:none}
+/* callouts */
+.note{border-left:4px solid var(--ac);background:var(--act);padding:10px 12px;border-radius:0 10px 10px 0;margin:12px 0}
+.warn{border-left:4px solid var(--b);background:var(--bt);padding:10px 12px;border-radius:0 10px 10px 0;margin:12px 0}
+/* details */
+details{background:var(--card);border:1px solid var(--ln);border-radius:10px;margin:8px 0;padding:0 14px}
+summary{cursor:pointer;font:600 16px Outfit,sans-serif;padding:11px 0;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"＋";float:right;color:var(--ac)}
+details[open] summary::after{content:"－"}
+details[open]{padding-bottom:10px}
+/* life cycle chips */
+.life{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:10px 0}
+.st{padding:5px 12px;border-radius:99px;font-weight:600;font-size:14px;border:1px solid var(--ln);background:var(--card)}
+.st.o{border-color:var(--ac);color:var(--ac2)}.st.d{border-color:var(--ok);color:var(--ok);background:var(--okt)}.st.l{border-color:var(--er);color:var(--er);background:var(--ert)}
+.ar{color:var(--fa)}
+/* try box */
+.try textarea,.try input{width:100%;font:inherit;font-size:16px;border:1px solid var(--ln);border-radius:8px;padding:8px 10px;background:var(--card);color:var(--ink);margin:4px 0 8px}
+.try pre{white-space:pre-wrap}
+dl.gl{margin:0}dl.gl dt{font:600 16px Outfit,sans-serif;margin-top:12px}dl.gl dd{margin:2px 0 0;color:var(--ink)}
+.refs li{margin:6px 0}.refs .dom{color:var(--fa);font-size:13px}
+footer{color:var(--fa);font-size:13px;text-align:center;padding:20px 0 30px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="bar">
+    <div class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0f8a7e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+    <b>Follow-ups App Explainer</b>
+    <button class="btn" id="theme" aria-label="Switch light or dark">Dark</button>
+  </div>
+  <nav class="nav" id="nav"></nav>
+</header>
+
+<div class="wrap">
+<aside class="rail" id="rail"></aside>
+<main>
+
+<!-- ============ OVERVIEW ============ -->
+<section id="overview" data-t="Overview">
+<h1>Follow-ups App</h1>
+<p class="sub">Structure, building blocks, flow and features of the personal follow-up tracker. It has a phone app for capturing tasks, a desktop bulletin for reviewing them, and a Google Sheet as the record.</p>
+<div class="key"><span><span class="tag d">D</span>How this app does it (from its own files)</span><span><span class="tag b">B</span>Background concept, for understanding</span></div>
+
+<div class="tiles">
+  <div class="tile"><b>9</b><span>files in total</span></div>
+  <div class="tile"><b>&lt; 1 s</b><span>to open the app</span></div>
+  <div class="tile"><b>0</b><span>servers to maintain</span></div>
+  <div class="tile"><b>₹0</b><span>running cost</span></div>
+</div>
+
+<h3>Purpose</h3>
+<p><span class="tag d">D</span>Instructions arrive all day by phone call, meeting, WhatsApp and letter, from the CMD, RCD Secretary, Chief Secretary, other officers, subordinates and the public. They concern SBPDCL, NBPDCL, the Energy Department, BSRDCL and RCD. The app captures each one in seconds, gives it a follow-up date, and keeps it in view until it is disposed.</p>
+
+<h3>Three Parts</h3>
+<div class="row2">
+  <div class="card"><h4 style="margin-top:0">Phone App</h4><p style="margin:0">Add tasks (Paste &amp; Save), see open follow-ups, tick them done, add notes, send on WhatsApp. It works even with no signal.</p></div>
+  <div class="card"><h4 style="margin-top:0">Desktop Bulletin</h4><p style="margin:0">A newspaper-style page of open issues grouped as Overdue, Due today, This week and Later. It has Dispose, Edit, WhatsApp and Print.</p></div>
+</div>
+<div class="card"><h4 style="margin-top:0">Google Sheet</h4><p style="margin:0">The permanent record. A small script attached to the sheet receives every change, writes it, logs it and makes a nightly backup copy.</p></div>
+</section>
+
+<!-- ============ CONCEPTS ============ -->
+<section id="concepts" data-t="Core Concepts">
+<h2>Core Concepts</h2>
+
+<h3>System Picture</h3>
+<div class="flow">
+  <div class="node ph"><b>Phone app / Bulletin</b><small>Web pages running in the browser (Chrome / Safari). Hosted free on GitHub Pages.</small></div>
+  <div class="arrow">save instantly</div>
+  <div class="node ph"><b>Device storage</b><small>Tasks plus a "waiting list" of changes, kept inside the browser on that device.</small></div>
+  <div class="arrow">send in background (when online)</div>
+  <div class="node sv"><b>Apps Script web app</b><small>A small program on Google's servers with one web link (/exec). It checks the key and writes the change.</small></div>
+  <div class="arrow">write rows</div>
+  <div class="node sh"><b>Google Sheet</b><small>Tasks tab (working list) · Log tab (owner-only history) · nightly backup copies in Drive.</small></div>
+</div>
+<p><span class="tag d">D</span>The key design choice is <b>save to the device first, send to the sheet later</b>. You never wait for Google. If the network is slow or absent, the change simply waits on the phone and goes out when the signal returns.</p>
+
+<h3>Progressive Web App</h3>
+<p><span class="tag b">B</span>A Progressive Web App (PWA) is a normal website that the phone can install like an app, with a home-screen icon, a full screen with no address bar, and offline use. Two files make this possible: a <b>manifest</b> (the app's ID card) and a <b>service worker</b> (an offline helper).</p>
+<p><span class="tag d">D</span><code>manifest.json</code> gives the name "Follow-ups", the teal tick icon and <code>"display": "standalone"</code>, which opens it without browser bars. That is why "Add to Home screen" turns the link into an app. Its <code>share_target</code> entry puts Follow-ups in the Android Share menu: a shared message opens <code>index.html?text=…</code>.</p>
+
+<h3>Service Worker</h3>
+<p><span class="tag b">B</span>A service worker is a small script the browser keeps running in the background for one website. It can answer page requests itself, from a saved copy, instead of going to the internet.</p>
+<p><span class="tag d">D</span><code>sw.js</code> uses a <b>"cache first, refresh in background"</b> rule. The page opens instantly from the saved copy while a fresh copy is fetched quietly for next time. It never touches calls to the Google server, so data is always live. It also ignores the extra part of a web address (for example the text of a shared message), so that text is never sent to GitHub or stored. Its cache has a version name (<code>fu-v21</code>). Changing that name makes phones throw away the old copy.</p>
+
+<h3>Local Storage</h3>
+<p><span class="tag b">B</span><code>localStorage</code> is a small notebook (about 5 MB) that each website gets inside the browser. It holds text only, survives closing the app, and is private to that browser on that device.</p>
+<p><span class="tag d">D</span>The app keeps four entries:</p>
+<div class="tw"><table>
+<tr><th>Key</th><th>Holds</th></tr>
+<tr><td><code>fu.tasks</code></td><td>All tasks (open, plus recently done), as JSON text</td></tr>
+<tr><td><code>fu.queue</code></td><td>The waiting list of changes not yet confirmed by the sheet</td></tr>
+<tr><td><code>fu.cfg</code></td><td>Server link (<code>/exec</code>) and the key</td></tr>
+<tr><td><code>fu.draft</code></td><td>A half-typed task, restored if the app is closed by mistake</td></tr>
+</table></div>
+
+<h3>Sync Queue</h3>
+<p><span class="tag d">D</span>Every change (add, done, +1 day, note, edit) becomes a small message called an <b>operation</b>, which is put on the waiting list. The app sends up to 50 at a time. Only the operations the server confirms are removed. If sending fails, it retries after 4 s, then 15 s, then every 60 s. The badge at the top shows the state: <b>✓ Synced</b> or <b>"2 waiting"</b>.</p>
+
+<h3>Web App Endpoint</h3>
+<p><span class="tag b">B</span>Google Apps Script can publish a script as a <b>web app</b> with a URL. Visiting the URL runs <code>doGet</code>, and sending data to it runs <code>doPost</code>. "Execute as: Me" means it writes to your sheet with your permission. "Anyone" means the phone can reach it without a Google sign-in. The secret key is what protects it.</p>
+
+<h3>JSON</h3>
+<p><span class="tag b">B</span>JSON is a plain-text way to write structured data, used between the app and the server. Example of one operation:</p>
+<pre><code>{ "op": "upd", "id": "Tm3k9x2ab", "f": { "status": "Done", "doneOn": "2026-11-08" }, "qid": "m3kb7q1zx" }</code></pre>
+</section>
+
+<!-- ============ STRUCTURE ============ -->
+<section id="structure" data-t="File Structure">
+<h2>File Structure</h2>
+<div class="tw"><table>
+<tr><th>File</th><th>Lives on</th><th>Language</th><th>Role</th></tr>
+<tr><td><code>index.html</code></td><td>GitHub</td><td>HTML + CSS + JavaScript</td><td>Phone app: Add tab, Follow-ups tab, settings</td></tr>
+<tr><td><code>bulletin.html</code></td><td>GitHub</td><td>HTML + CSS + JavaScript</td><td>Desktop bulletin with Dispose, Edit, WhatsApp, Export PDF</td></tr>
+<tr><td><code>html2pdf.bundle.min.js</code></td><td>GitHub</td><td>JavaScript library (open source)</td><td>Turns the bulletin into a PDF file; loaded only when Export PDF is clicked</td></tr>
+<tr><td><code>sw.js</code></td><td>GitHub</td><td>JavaScript</td><td>Service worker: instant opening and offline use</td></tr>
+<tr><td><code>manifest.json</code></td><td>GitHub</td><td>JSON</td><td>Makes the page installable, and adds it to the Share menu</td></tr>
+<tr><td><code>icon-192.png</code>, <code>icon-512.png</code></td><td>GitHub</td><td>Images</td><td>Home-screen icons</td></tr>
+<tr><td><code>Code.gs</code></td><td>Apps Script (inside the Sheet)</td><td>Apps Script (JavaScript)</td><td>Server: receives changes, writes the sheet, log, backups</td></tr>
+</table></div>
+
+<h3>Inside index.html</h3>
+<p><span class="tag d">D</span>One file holds three layers, top to bottom:</p>
+<ol class="steps">
+<li><b>&lt;style&gt;</b>: the look. Colours are set once as variables (<code>--ac:#0f8a7e</code> teal), followed by rules for cards, chips, buttons and the list.</li>
+<li><b>HTML body</b>: the parts of the screen, namely a header with a sync badge and tabs, then three sections: <code>#v-add</code> (form), <code>#v-list</code> (follow-ups) and <code>#v-set</code> (settings).</li>
+<li><b>&lt;script&gt;</b>: the behaviour. Storage helpers, date helpers, chip selection, paste, save, list drawing, sync and pull.</li>
+</ol>
+
+<h3>Google Sheet Tabs</h3>
+<div class="tw"><table>
+<tr><th>Tab</th><th>Use</th></tr>
+<tr><td>Tasks</td><td>One row per task. Status has an Open/Done dropdown. ID and Updated are hidden columns.</td></tr>
+<tr><td>Log</td><td>Every add or change with time and details. Protected so only the owner can edit it.</td></tr>
+<tr><td>Drive folder "Follow-ups backups"</td><td>A copy of the whole sheet every night at about 2 am. The last 30 are kept.</td></tr>
+</table></div>
+</section>
+
+<!-- ============ CODING BLOCKS ============ -->
+<section id="blocks" data-t="Coding Blocks">
+<h2>Coding Blocks</h2>
+<p class="sub">The small building pieces the app is made of, each with a real example from its files.</p>
+
+<h3>HTML Element</h3>
+<p><span class="tag b">B</span>HTML describes what is on the screen. Each piece is an element in angle brackets; <code>class</code> links it to styles and <code>data-…</code> stores extra information for the script.</p>
+<pre><code>&lt;button class="chip on" data-v="Energy"&gt;Energy Dept&lt;/button&gt;</code></pre>
+<p><span class="tag d">D</span>The class <code>on</code> marks it as already selected, which is how Energy Dept, CMD, 1 day and WhatsApp are the defaults.</p>
+
+<h3>CSS Rule</h3>
+<p><span class="tag b">B</span>CSS says how things look: a selector, then properties.</p>
+<pre><code>.chip.on{ background:var(--act); border-color:var(--ac); color:var(--ac2) }
+.chip.on::before{ content:"✓ " }   <span class="c">/* adds the tick before a selected chip */</span></code></pre>
+<p><span class="tag b">B</span>A <b>media query</b> changes the layout by screen size. The bulletin uses <code>columns:3 300px</code> for newspaper columns, which fold to one column on a phone automatically.</p>
+
+<h3>Variable and Function</h3>
+<p><span class="tag b">B</span>A <b>variable</b> stores a value, and a <b>function</b> is a named recipe that can be reused. <code>const</code> means the value won't be replaced.</p>
+<pre><code>const DEF = {org:'Energy', from:'CMD', src:'WhatsApp', urg:''};   <span class="c">// default choices</span>
+const today = () =&gt; ymd(new Date());                          <span class="c">// "2026-11-08"</span></code></pre>
+
+<h3>Event Listener</h3>
+<p><span class="tag b">B</span>The script waits for something to happen, such as a tap, a key press or text being typed, and then runs code.</p>
+<pre><code>$('#saveBtn').onclick = addTask;           <span class="c">// tap Save → run addTask</span>
+document.addEventListener('keydown', e =&gt; {
+  if ((e.ctrlKey || e.metaKey) &amp;&amp; e.key === 'Enter') addTask();   <span class="c">// Ctrl+Enter</span>
+});</code></pre>
+
+<h3>Object</h3>
+<p><span class="tag b">B</span>An object groups named values together. Every task is one object:</p>
+<pre><code>{ id:'Tm3k9x2ab', text:'Bhagalpur Ganga Path, Buidco Pipeline issue',
+  org:'BSRDCL', from:'Other officer – MD Buidco', name:'Animesh Parashar',
+  source:'Call', due:'2026-11-09', urgent:'', status:'Open', remarks:'' }</code></pre>
+
+<h3>Array Filter and Sort</h3>
+<p><span class="tag b">B</span>An array is a list. <code>filter</code> keeps the items that pass a test, and <code>sort</code> puts them in order.</p>
+<pre><code>const overdue = open.filter(t =&gt; t.due &lt; today());          <span class="c">// date earlier than today</span>
+overdue.sort((a,b) =&gt; a.due.localeCompare(b.due));          <span class="c">// oldest first</span></code></pre>
+<p><span class="tag d">D</span>Dates are stored as <code>YYYY-MM-DD</code> text, so ordinary text comparison also gives the correct date order.</p>
+
+<h3>Template Literal</h3>
+<p><span class="tag b">B</span>Back-tick strings build text with values inside <code>${…}</code>. The list and the bulletin are drawn this way:</p>
+<pre><code>`&lt;span class="due"&gt;${dueLabel(t.due)}&lt;/span&gt;`      <span class="c">// → "Tomorrow", "2 days late"…</span></code></pre>
+<p><span class="tag d">D</span>Every value typed by a person passes through <code>esc()</code> first, which turns <code>&lt;</code> into harmless text so a message can never break the page.</p>
+
+<h3>Local Storage Read and Write</h3>
+<pre><code>const load  = (k,d) =&gt; JSON.parse(localStorage.getItem(k)) ?? d;   <span class="c">// read (simplified)</span>
+const store = (k,v) =&gt; localStorage.setItem(k, JSON.stringify(v));  <span class="c">// write</span></code></pre>
+
+<h3>Async Fetch</h3>
+<p><span class="tag b">B</span><code>fetch</code> talks to a web address. <code>async/await</code> lets the code wait for the reply without freezing the screen.</p>
+<pre><code>const r = await fetch(cfg.u, { method:'POST',
+  headers:{'Content-Type':'text/plain;charset=utf-8'},
+  body: JSON.stringify({ k: cfg.k, ops: batch }) });
+const j = await r.json();          <span class="c">// { ok:true }</span></code></pre>
+<p><span class="tag d">D</span>The data is sent as <code>text/plain</code> on purpose. This is a "simple request" that Google's server accepts from any website without an extra permission check, which keeps saving to a single network call.</p>
+
+<h3>Apps Script Blocks</h3>
+<pre><code>function doPost(e) {                                  <span class="c">// runs when the app sends data</span>
+  const b = JSON.parse(e.postData.contents);
+  if (!keyOk(b.k)) return out({ok:false, error:'key'});
+  const lock = LockService.getScriptLock();           <span class="c">// one writer at a time</span>
+  lock.tryLock(20000);
+  try { applyOps(b.ops); } finally { lock.releaseLock(); }
+  return out({ok:true});
+}
+sh.getRange(row, 1, n, 13).setValues(rows);           <span class="c">// write many cells in one go</span></code></pre>
+</section>
+
+<!-- ============ DATA ============ -->
+<section id="data" data-t="Data Model">
+<h2>Data Model</h2>
+<h3>Task Fields</h3>
+<div class="tw"><table>
+<tr><th>App field</th><th>Sheet column</th><th>Meaning</th></tr>
+<tr><td><code>id</code></td><td>ID (hidden)</td><td>Unique code made on the phone, e.g. <code>Tm3k9x2ab</code>. Stops duplicates.</td></tr>
+<tr><td><code>created</code></td><td>Created</td><td>Date and time the task was saved</td></tr>
+<tr><td><code>text</code></td><td>Task</td><td>The issue, as pasted or typed (editable)</td></tr>
+<tr><td><code>org</code></td><td>Office</td><td>SBPDCL, NBPDCL, Energy, BSRDCL, RCD, or a typed office name</td></tr>
+<tr><td><code>from</code></td><td>From</td><td>CMD, RCD Secretary… or "Subordinate – EEE Danapur"</td></tr>
+<tr><td><code>name</code></td><td>Name / note</td><td>Contact person, file number or phone</td></tr>
+<tr><td><code>source</code></td><td>Came by</td><td>Call, Meeting, WhatsApp, Email, Letter, In person</td></tr>
+<tr><td><code>due</code></td><td>Follow up by</td><td>Follow-up date</td></tr>
+<tr><td><code>urgent</code></td><td>Urgent</td><td>"Yes" or blank</td></tr>
+<tr><td><code>status</code></td><td>Status</td><td>Open or Done</td></tr>
+<tr><td><code>doneOn</code></td><td>Done on</td><td>Date disposed (filled automatically)</td></tr>
+<tr><td><code>updated</code></td><td>Updated (hidden)</td><td>Last change time, used when merging</td></tr>
+<tr><td><code>remarks</code></td><td>Remarks</td><td>Your note or instructions (editable, goes into WhatsApp)</td></tr>
+</table></div>
+
+<h3>Operations</h3>
+<div class="tw"><table>
+<tr><th>Operation</th><th>Sent when</th><th>Server action</th></tr>
+<tr><td><code>add</code></td><td>A new task is saved</td><td>Appends a row, or ignores it if that ID already exists (safe to resend)</td></tr>
+<tr><td><code>upd</code></td><td>Done, reopen, +1 day/+1 week, note, edit</td><td>Changes only the allowed cells: Status, Done on, Follow up by, Remarks, Task, From, Office</td></tr>
+</table></div>
+
+<h3>Task Life Cycle</h3>
+<div class="life"><span class="st o">Open</span><span class="ar">→</span><span class="st l">Due / Overdue</span><span class="ar">→ +1 day / +1 week →</span><span class="st o">Open</span><span class="ar">→</span><span class="st d">Done</span><span class="ar">→ untick →</span><span class="st o">Open</span></div>
+<p><span class="tag d">D</span>A task is never deleted by the app. "Dispose" only sets Status to Done and fills in Done on, so the full history stays in the sheet.</p>
+</section>
+
+<!-- ============ FLOWS ============ -->
+<section id="flows" data-t="Flows">
+<h2>Flows</h2>
+
+<h3>Add Flow</h3>
+<ol class="steps">
+<li>Copy the WhatsApp message and open the app. It loads from the phone's saved copy in under a second.</li>
+<li>The defaults are already selected (Energy Dept, CMD, 1 day, WhatsApp). Change any if needed.</li>
+<li>Tap <b>Paste &amp; Save</b>. The app reads the clipboard and spots a WhatsApp sender name (<code>[08/11, 6:54 am] Name:</code>).</li>
+<li>The app checks that the text is not empty and works out the follow-up date (today + 1 day).</li>
+<li>It builds the task object, adds it to <code>fu.tasks</code>, puts an <code>add</code> operation on the waiting list and shows "Saved · follow up Tomorrow".</li>
+<li>The form resets to the defaults, and sending starts in the background.</li>
+</ol>
+
+<h3>Share Flow</h3>
+<ol class="steps">
+<li>In WhatsApp, long-press the message → <b>Share</b> → <b>Follow-ups</b>. This needs the app installed from Chrome with <b>Install</b>.</li>
+<li>The phone opens <code>index.html?text=…</code>. The app reads the text and removes it from the address at once.</li>
+<li>The task is saved with the defaults. A half-typed draft is put aside and brought back afterwards.</li>
+<li>The <b>"Who sent it?"</b> bar appears for 15 seconds, with CMD, RCD Secretary, Chief Secretary, your 6 recent names and Other…. One tap sets From, along with the office last used with that person.</li>
+<li>Sending waits while the bar is open, so the sheet gets the task with the right From in one entry. <b>Undo</b> removes it before it is ever sent.</li>
+</ol>
+<p><span class="tag b">B</span>WhatsApp shares only the message text, not the sender's name or number. That is why the app asks "Who sent it?".</p>
+
+<h3>Sync Flow</h3>
+<ol class="steps">
+<li>Take up to 50 waiting operations.</li>
+<li>Send them with the key to the <code>/exec</code> link.</li>
+<li>The server checks the key, locks, writes the Tasks rows and Log rows, then unlocks and replies <code>{ok:true}</code>.</li>
+<li>The app removes exactly the operations that were confirmed (matched by <code>qid</code>), and the badge turns to ✓ Synced.</li>
+<li>On failure, the operations stay on the phone and are retried automatically. They are also re-sent when the phone comes back online or the app is reopened.</li>
+</ol>
+
+<h3>Pull and Merge Flow</h3>
+<p><span class="tag d">D</span>On opening, on returning to the app, and every 2 minutes on the bulletin, the app asks the server for the list (open tasks plus those done in the last 60 days) and merges it:</p>
+<ul>
+<li>The sheet's version is taken as true, so edits made directly in the sheet appear in the app.</li>
+<li>Except when a task has a change still waiting, or was changed on this device moments ago. Then the device's version is kept, so nothing you just did is undone.</li>
+<li>Tasks deleted from the sheet disappear from the app at the next refresh.</li>
+</ul>
+
+<h3>Dispose Flow</h3>
+<ol class="steps">
+<li>Tick the circle (phone) or click <b>✓ Dispose</b> (bulletin).</li>
+<li>The item is struck through and fades out. Status becomes Done and Done on becomes today.</li>
+<li>An <code>upd</code> operation is queued and sent. <b>Undo</b> is offered for a few seconds.</li>
+<li>In the sheet, the row shows Done. Changing Status by hand in the sheet also fills Done on, through the sheet's <code>onEdit</code> rule.</li>
+</ol>
+
+<h3>WhatsApp Flow</h3>
+<p><span class="tag d">D</span><b>Copy</b> or <b>WhatsApp</b> builds this text:</p>
+<pre><code>Bhagalpur Ganga Path, Buidco Pipeline issue
+Ref: MD Buidco
+
+Please complete the pipeline shifting by 15 Nov and share the status.</code></pre>
+<p>The <b>Ref</b> is the name part of From ("Other officer – MD Buidco" gives "MD Buidco", and CMD gives "CMD"). The note follows after one blank line. The WhatsApp button opens <code>wa.me</code> with this text. If the Name field holds a 10-digit mobile number, the link opens that person's chat directly.</p>
+
+<div class="card try">
+<h4 style="margin-top:0">Try It</h4>
+<label>Issue</label><textarea id="tIss" rows="2">Bhagalpur Ganga Path, Buidco Pipeline issue</textarea>
+<label>From</label><input id="tFrom" value="Other officer – MD Buidco">
+<label>Note</label><textarea id="tNote" rows="2">Please complete the pipeline shifting by 15 Nov and share the status.</textarea>
+<div style="font-size:13px;color:var(--mu)">WhatsApp text:</div>
+<pre id="tOut"></pre>
+</div>
+
+<h3>PDF Flow</h3>
+<ol class="steps">
+<li>Click <b>Export PDF</b> on the bulletin. The PDF maker loads the first time (about 0.9 MB) and is cached after that.</li>
+<li>A clean A4 copy of the current view is built, with the full text of every issue and its notes.</li>
+<li>The app measures every line, heading and short issue and moves any that would cross a page edge onto the next page. No line is ever cut, and a heading always stays with its first issue.</li>
+<li>The page is drawn as the browser shows it, so Hindi text prints correctly. "Page x of y" is added at the bottom, and the file downloads as <code>Follow-up_Bulletin_YYYY-MM-DD.pdf</code>.</li>
+</ol>
+
+<h3>Offline Flow</h3>
+<p><span class="tag d">D</span>With no signal, the app still opens (service worker), still saves (local storage) and still ticks tasks done. The badge shows "n waiting". When the signal returns, everything is sent in order with no action from you.</p>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section id="features" data-t="Features">
+<h2>Features</h2>
+<div class="tw"><table>
+<tr><th>Feature</th><th>Where</th><th>How it works</th></tr>
+<tr><td>Share to Follow-ups</td><td>Phone (Android)</td><td>WhatsApp → Share → Follow-ups saves the message instantly</td></tr>
+<tr><td>Who sent it?</td><td>Phone</td><td>One-tap From after a share; also sets the usual office</td></tr>
+<tr><td>Paste &amp; Save</td><td>Phone</td><td>Reads the clipboard and saves in one tap with the selected options</td></tr>
+<tr><td>Defaults</td><td>Phone</td><td>Energy Dept · CMD · 1 day · WhatsApp, reset after every save (<code>DEF</code>)</td></tr>
+<tr><td>Urgent toggle</td><td>Phone</td><td>A small red button next to Paste; urgent tasks sort first</td></tr>
+<tr><td>Name pop-up boxes</td><td>Phone</td><td>Appear for Office → Other, and From → Other officer / Subordinate / Public</td></tr>
+<tr><td>Name suggestions</td><td>Phone</td><td>The 6 most recent names as tap-chips, plus type-ahead, built from earlier tasks</td></tr>
+<tr><td>WhatsApp sender detection</td><td>Phone</td><td>A pasted WhatsApp message selects WhatsApp and fills in the sender's name</td></tr>
+<tr><td>Draft keeping</td><td>Phone</td><td>Half-typed text survives closing the app</td></tr>
+<tr><td>Follow-ups list</td><td>Phone</td><td>All open / Upcoming / Done, search, office filter, tap to expand</td></tr>
+<tr><td>Tick to done + Undo</td><td>Both</td><td>One tap disposes, with Undo for a few seconds</td></tr>
+<tr><td>+1 day / +1 week</td><td>Both</td><td>Moves the follow-up date</td></tr>
+<tr><td>Edit issue and note</td><td>Both</td><td>Multi-line boxes; Ctrl + Enter saves on desktop</td></tr>
+<tr><td>Copy / WhatsApp</td><td>Both</td><td>Issue + Ref + note, ready to send</td></tr>
+<tr><td>Newspaper bulletin</td><td>Desktop</td><td>Masthead, counts strip, 3 columns; empty sections are hidden</td></tr>
+<tr><td>Full text on click</td><td>Desktop</td><td>Click anywhere on an issue to show the complete message</td></tr>
+<tr><td>Export PDF</td><td>Desktop</td><td>Downloads an A4 PDF with full text, clean page breaks and page numbers</td></tr>
+<tr><td>Auto refresh</td><td>Desktop</td><td>Every 2 minutes and on returning to the window</td></tr>
+<tr><td>Backup JSON</td><td>Phone settings</td><td>Downloads every task on the device as a file</td></tr>
+<tr><td>Nightly backup</td><td>Sheet</td><td>A copy every night; the last 30 are kept</td></tr>
+</table></div>
+</section>
+
+<!-- ============ SERVER ============ -->
+<section id="server" data-t="Server Script">
+<h2>Server Script</h2>
+<p class="sub">Code.gs, the program attached to the Google Sheet.</p>
+<div class="tw"><table>
+<tr><th>Function</th><th>Job</th></tr>
+<tr><td><code>setup()</code></td><td>Run once: creates the Tasks and Log tabs, headers, date formats, the Status dropdown and the key, and installs the nightly backup. Sets the time zone to India.</td></tr>
+<tr><td><code>doGet(e)</code></td><td>Answers "give me the list" (<code>?a=list&amp;k=KEY</code>)</td></tr>
+<tr><td><code>doPost(e)</code></td><td>Receives a batch of operations, checks the key, locks, applies them</td></tr>
+<tr><td><code>applyOps(ops)</code></td><td>Adds new rows in one write, updates allowed cells, writes Log rows</td></tr>
+<tr><td><code>listTasks()</code></td><td>Reads the sheet and returns open tasks plus those done in the last 60 days</td></tr>
+<tr><td><code>onEdit(e)</code></td><td>When Status is changed by hand in the sheet, fills in Done on</td></tr>
+<tr><td><code>backupNightly()</code></td><td>Copies the sheet to "Follow-ups backups" and keeps the last 30</td></tr>
+<tr><td><code>safe()</code>, <code>toDate()</code>, <code>keyOk()</code></td><td>Helpers: keep text exactly as typed, convert dates in India time, check the key</td></tr>
+</table></div>
+
+<h3>Data Safety</h3>
+<ul>
+<li><span class="tag d">D</span><b>Key check</b>: requests without the right key are refused.</li>
+<li><span class="tag d">D</span><b>Script lock</b>: two devices saving at the same second cannot overwrite each other.</li>
+<li><span class="tag d">D</span><b>No duplicates</b>: a resent task with the same ID is ignored.</li>
+<li><span class="tag d">D</span><b>Text kept as typed</b>: a leading apostrophe stops "8/11 call" from turning into a date, keeps the leading 0 of a phone number, and makes "=…" plain text, never a formula.</li>
+<li><span class="tag d">D</span><b>Log tab</b>: every change is recorded, and only the owner can edit it.</li>
+<li><span class="tag d">D</span><b>India time</b>: follow-up dates never shift by a day.</li>
+</ul>
+</section>
+
+<!-- ============ SPEED ============ -->
+<section id="speed" data-t="Speed Design">
+<h2>Speed Design</h2>
+<div class="tw"><table>
+<tr><th>Choice</th><th>Effect</th></tr>
+<tr><td>Static page on GitHub Pages, not an Apps Script page</td><td>Apps Script pages take 2–4 s to start; a static page is served instantly from a global network</td></tr>
+<tr><td>Service worker cache</td><td>The second and later opens load from the phone itself, under 0.5 s typically</td></tr>
+<tr><td>Save to device first</td><td>"Saved" appears at once; the sheet is updated in the background</td></tr>
+<tr><td>Batching</td><td>Up to 50 changes in one call, and one sheet write for new rows</td></tr>
+<tr><td>No frameworks or libraries</td><td>Plain HTML/CSS/JS of about 30 KB with nothing extra to download</td></tr>
+<tr><td>System fonts in the app</td><td>No font download before the first screen</td></tr>
+<tr><td>Defaults + Paste &amp; Save</td><td>A typical WhatsApp instruction is logged in one tap</td></tr>
+</table></div>
+</section>
+
+<!-- ============ SECURITY ============ -->
+<section id="security" data-t="Security">
+<h2>Security</h2>
+<ul>
+<li><span class="tag d">D</span>The GitHub repository is public, but it holds only the page. <b>No tasks, link or key are stored in it.</b></li>
+<li><span class="tag d">D</span>Tasks live in your Google Sheet and on your linked devices. The <code>/exec</code> link together with the key acts as the password.</li>
+<li><span class="tag d">D</span>Anyone given the full setup link can read and add tasks, so share it only with trusted staff.</li>
+<li><span class="tag d">D</span><b>To change the key</b>: open Apps Script → Project Settings → Script properties, delete <code>KEY</code>, run <code>setup</code>, then re-link each device with the new link.</li>
+<li><span class="tag b">B</span>Local storage is private to each browser on each device; another website cannot read it.</li>
+</ul>
+</section>
+
+<!-- ============ MAINTENANCE ============ -->
+<section id="maintain" data-t="Maintenance">
+<h2>Maintenance</h2>
+<details><summary>Change Default Choices</summary>
+<p>In <code>index.html</code>, find <code>const DEF=</code> and change the values, for example <code>org:'SBPDCL'</code>. In the HTML, move the word <code>on</code> to the same chips so the first screen matches.</p></details>
+<details><summary>Add an Office or From Option</summary>
+<p>In <code>index.html</code>, copy a chip line such as <code>&lt;button class="chip" data-v="RCD"&gt;RCD&lt;/button&gt;</code>, then change the <code>data-v</code> value and the label. For offices, also add the name to the <code>STD</code> list in both <code>index.html</code> and <code>bulletin.html</code>.</p></details>
+<details><summary>Publish a Page Change</summary>
+<p>Upload the changed files to GitHub. Also open <code>sw.js</code> and raise the version (<code>fu-v21</code> → <code>fu-v22</code>) so phones pick up the new copy. Reopen the app once or twice.</p></details>
+<details><summary>Publish a Server Change</summary>
+<p>Paste the new <code>Code.gs</code> into Apps Script and save. Then <b>Deploy → Manage deployments → ✏ → Version: New version → Deploy</b>. The link stays the same.</p></details>
+<details><summary>Restore from Backup</summary>
+<p>Open Drive → "Follow-ups backups", open the copy you need, and copy the rows back into the Tasks tab. A phone's own copy can also be saved with ⚙ → Download backup (JSON).</p></details>
+<details><summary>Add Another Person</summary>
+<p><b>For a separate list:</b> they make their own sheet with <code>Code.gs</code> and open your app address with their own <code>#u=…&amp;k=…</code>. <b>For a shared list:</b> give them your setup link.</p></details>
+</section>
+
+<!-- ============ TROUBLESHOOTING ============ -->
+<section id="trouble" data-t="Troubleshooting">
+<h2>Troubleshooting</h2>
+<div class="tw"><table>
+<tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
+<tr><td>Badge says "Not linked"</td><td>The setup link was never opened in this app or browser (common on iPhone home-screen apps)</td><td>⚙ → paste the full setup link → Save and sync</td></tr>
+<tr><td>"n waiting" for a long time</td><td>No internet, or the web app access is not "Anyone"</td><td>Check the network; redeploy with Who has access: Anyone</td></tr>
+<tr><td>"The key is not right"</td><td>The key was copied with spaces, or was changed</td><td>Paste the setup link again</td></tr>
+<tr><td>Old screen after an update</td><td>Phone is showing its saved copy</td><td>Close and reopen the app twice; check the <code>sw.js</code> version was raised</td></tr>
+<tr><td>Issue edits not in the sheet</td><td>The server is on an old version</td><td>Deploy → Manage deployments → New version</td></tr>
+<tr><td>GitHub link shows code, not the app</td><td>A <code>github.com</code> address was used</td><td>Use <code>mdsbpdcl-hub.github.io/MDFolloup/</code></td></tr>
+<tr><td>Paste button does nothing</td><td>Clipboard permission was denied</td><td>Allow it when asked, or long-press in the box and choose Paste</td></tr>
+</table></div>
+</section>
+
+<!-- ============ GLOSSARY ============ -->
+<section id="glossary" data-t="Glossary">
+<h2>Glossary</h2>
+<dl class="gl">
+<dt>Apps Script</dt><dd>Google's JavaScript that runs on Google servers and can work with Sheets, Drive and Gmail.</dd>
+<dt>Batch</dt><dd>Several changes sent together in one call.</dd>
+<dt>Cache</dt><dd>A saved copy kept for fast reuse.</dd>
+<dt>Clipboard</dt><dd>Where copied text sits until it is pasted.</dd>
+<dt>Deployment</dt><dd>A published version of the Apps Script web app, with its own <code>/exec</code> link.</dd>
+<dt>Endpoint</dt><dd>A web address that a program sends data to.</dd>
+<dt>Event</dt><dd>Something that happens on the page (tap, typing, key press) and that code can react to.</dd>
+<dt>Fetch</dt><dd>The browser command to send or receive data over the internet.</dd>
+<dt>GitHub Pages</dt><dd>Free hosting that publishes files in a GitHub repository as a website.</dd>
+<dt>JSON</dt><dd>A text format for structured data, such as <code>{"status":"Done"}</code>.</dd>
+<dt>Local Storage</dt><dd>A small private store inside the browser for each website.</dd>
+<dt>Lock</dt><dd>Lets only one save write to the sheet at a time.</dd>
+<dt>Manifest</dt><dd>The file that makes a website installable as an app.</dd>
+<dt>Merge</dt><dd>Combining the sheet's list with the device's list without losing recent changes.</dd>
+<dt>Operation</dt><dd>One recorded change, either <code>add</code> or <code>upd</code>.</dd>
+<dt>PWA</dt><dd>Progressive Web App: a website that installs and works like an app.</dd>
+<dt>Queue</dt><dd>The waiting list of changes not yet confirmed by the sheet.</dd>
+<dt>Service Worker</dt><dd>A background script that serves the app from the device for instant and offline use.</dd>
+<dt>Sync</dt><dd>Sending waiting changes and fetching the latest list.</dd>
+</dl>
+</section>
+
+<!-- ============ REFERENCES ============ -->
+<section id="refs" data-t="References">
+<h2>References</h2>
+<ul class="refs">
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps" target="_blank" rel="noopener">Progressive web apps</a> <span class="dom">developer.mozilla.org</span></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/Manifest" target="_blank" rel="noopener">Web app manifest</a> <span class="dom">developer.mozilla.org</span></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API" target="_blank" rel="noopener">Service Worker API</a> <span class="dom">developer.mozilla.org</span></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage" target="_blank" rel="noopener">Window.localStorage</a> <span class="dom">developer.mozilla.org</span></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API" target="_blank" rel="noopener">Fetch API</a> <span class="dom">developer.mozilla.org</span></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/readText" target="_blank" rel="noopener">Clipboard.readText()</a> <span class="dom">developer.mozilla.org</span></li>
+<li><a href="https://developers.google.com/apps-script/guides/web" target="_blank" rel="noopener">Web Apps (Apps Script)</a> <span class="dom">developers.google.com</span></li>
+<li><a href="https://developers.google.com/apps-script/guides/content" target="_blank" rel="noopener">Content Service</a> <span class="dom">developers.google.com</span></li>
+<li><a href="https://developers.google.com/apps-script/reference/lock/lock-service" target="_blank" rel="noopener">Lock Service</a> <span class="dom">developers.google.com</span></li>
+<li><a href="https://developers.google.com/apps-script/guides/triggers" target="_blank" rel="noopener">Simple Triggers (onEdit)</a> <span class="dom">developers.google.com</span></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/Manifest/share_target" target="_blank" rel="noopener">share_target (Web app manifest)</a> <span class="dom">developer.mozilla.org</span></li>
+<li><a href="https://github.com/eKoopmans/html2pdf.js" target="_blank" rel="noopener">html2pdf.js</a> <span class="dom">github.com</span></li>
+<li><a href="https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site" target="_blank" rel="noopener">Creating a GitHub Pages site</a> <span class="dom">docs.github.com</span></li>
+<li><a href="https://faq.whatsapp.com/" target="_blank" rel="noopener">WhatsApp Help Center (see "How to use click to chat")</a> <span class="dom">faq.whatsapp.com</span></li>
+<li>App files: <code>index.html</code>, <code>bulletin.html</code>, <code>html2pdf.bundle.min.js</code>, <code>sw.js</code>, <code>manifest.json</code>, <code>Code.gs</code> (repository mdsbpdcl-hub/MDFolloup and the Follow-ups Google Sheet)</li>
+</ul>
+</section>
+
+<footer>Follow-ups App · Explainer</footer>
+</main>
+</div>
+
+<script>
+(()=>{
+// theme (remembered on this device)
+const root=document.documentElement;
+try{const t=localStorage.getItem('fx.theme');if(t)root.dataset.theme=t;else if(matchMedia('(prefers-color-scheme: dark)').matches)root.dataset.theme='dark'}catch(e){}
+const tb=document.getElementById('theme'),lab=()=>tb.textContent=root.dataset.theme==='dark'?'Light':'Dark';lab();
+tb.onclick=()=>{root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';lab();try{localStorage.setItem('fx.theme',root.dataset.theme)}catch(e){}};
+
+// chapter navigation (strip on phone, side rail on desktop)
+const secs=[...document.querySelectorAll('section[data-t]')];
+const links=secs.map(s=>`<a href="#${s.id}" data-id="${s.id}">${s.dataset.t}</a>`).join('');
+const nav=document.getElementById('nav'),rail=document.getElementById('rail');nav.innerHTML=links;rail.innerHTML=links;
+const setOn=id=>{document.querySelectorAll('[data-id]').forEach(a=>a.classList.toggle('on',a.dataset.id===id));
+  const a=nav.querySelector(`[data-id="${id}"]`);if(a)nav.scrollTo({left:a.offsetLeft-nav.clientWidth/2+a.clientWidth/2,behavior:'smooth'})};
+const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)setOn(e.target.id)})},{rootMargin:'-30% 0px -65% 0px'});
+secs.forEach(s=>io.observe(s));setOn(secs[0].id);
+
+// try-it: WhatsApp text, built the same way as the app
+const iss=document.getElementById('tIss'),fr=document.getElementById('tFrom'),nt=document.getElementById('tNote'),out=document.getElementById('tOut');
+function wa(){const f=fr.value.trim();const ref=f.includes(' – ')?f.split(' – ').slice(1).join(' – ').trim():f;const n=nt.value.trim();
+  out.textContent=iss.value.trim()+(ref&&ref!=='Self'?'\nRef: '+ref:'')+(n?'\n\n'+n:'')}
+[iss,fr,nt].forEach(x=>x.addEventListener('input',wa));wa();
+})();
+</script>
+</body>
+</html>

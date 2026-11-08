@@ -1,5 +1,5 @@
 // Opens instantly from cache, refreshes the cache in the background.
-const C = 'fu-v12';
+const C = 'fu-v21';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './bulletin.html'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
@@ -9,8 +9,13 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== location.origin) return;   // never touch server calls
-  e.respondWith(caches.open(C).then(c => c.match(e.request, {ignoreSearch: true}).then(hit => {
-    const net = fetch(e.request).then(r => { if (r.ok) c.put(e.request, r.clone()); return r; }).catch(() => hit);
+  // One cache entry per file. The query part (e.g. ?text=… of a shared message) is dropped,
+  // so message text is never sent to GitHub or kept in the cache.
+  const key = u.origin + u.pathname;
+  e.respondWith(caches.open(C).then(async c => {
+    const hit = await c.match(key);
+    const net = fetch(key).then(r => { if (r.ok) c.put(key, r.clone()); return r; })
+                          .catch(() => hit || Response.error());
     return hit || net;
-  })));
+  }));
 });

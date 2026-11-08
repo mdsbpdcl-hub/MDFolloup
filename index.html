@@ -60,6 +60,16 @@ textarea:focus,input:focus,select:focus{border-color:var(--ac);box-shadow:0 0 0 
 .btn:active{background:var(--ac2)}
 .hint{color:var(--fa);font-size:12px;text-align:center;margin-top:6px}
 .err{background:var(--ert);color:var(--er);border-radius:8px;padding:8px 10px;margin-top:10px}
+.wsb{position:fixed;left:8px;right:8px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:21;max-width:560px;margin:0 auto;background:#fff;border:1px solid var(--acl);border-radius:14px;box-shadow:0 8px 28px rgba(31,41,51,.18);padding:10px 12px 0;overflow:hidden;animation:pop .18s ease-out}
+.wh{display:flex;align-items:center;gap:8px}.wh span{flex:1;font-size:14px}.wh span b{color:var(--ac2)}
+.wh button{border:0;background:none;font-weight:700;cursor:pointer;min-height:36px;padding:0 8px}
+#wsUndo{color:var(--ac2)}#wsX{font-size:22px;color:var(--fa);line-height:1}
+.wl{font-weight:700;margin:4px 0 6px}
+.wsb .chips{max-height:132px;overflow:auto}
+.wo{display:flex;gap:6px;margin-top:8px}.wo input{flex:1;min-height:40px;font-size:16px;border:1px solid var(--fb);border-radius:8px;padding:6px 10px;outline:0}
+.wo input:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acl)}
+.wo button{min-height:40px;padding:0 14px;border:0;border-radius:8px;background:var(--ac);color:#fff;font-weight:700}
+.wbar{height:3px;background:var(--ln);margin:10px -12px 0}.wbar i{display:block;height:100%;background:var(--ac);width:100%}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(150%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;transition:transform .18s;z-index:20;max-width:92vw;text-align:center}
 .toast{visibility:hidden}.toast.show{transform:translateX(-50%) translateY(0);visibility:visible}
 .toast b{color:#9fe3d7}
@@ -95,7 +105,7 @@ textarea:focus,input:focus,select:focus{border-color:var(--ac);box-shadow:0 0 0 
 .dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;margin:4px 0 10px}
 .dl dt{color:var(--mu)}.dl dd{margin:0;word-break:break-word}
 .tag.u{display:inline-block;padding:1px 8px;border-radius:99px;background:var(--ert);color:var(--er);font-weight:700;font-size:12px}
-.note{display:flex;gap:6px;margin-bottom:8px}.note input{flex:1;min-height:40px}
+.note{margin-bottom:8px}.note textarea{min-height:76px;font-size:16px}.note .ab{margin-top:6px}
 .acts{display:flex;gap:6px;flex-wrap:wrap}
 .ab.wa{display:inline-flex;align-items:center;text-decoration:none;color:#128c4a;border-color:#bfe5cd;background:#f1fbf5}
 .ab{min-height:40px;padding:6px 12px;border:1px solid var(--fb);background:#fff;border-radius:8px;cursor:pointer;font-weight:600}
@@ -190,11 +200,19 @@ footer{text-align:center;color:var(--fa);font-size:12px;padding:10px 0 24px}
     <input type="text" id="sk" placeholder="Key shown during setup" autocomplete="off">
     <button class="btn" id="setSave">Save and sync</button>
     <p class="small" style="margin-top:14px">Your entries are kept on this device and copied to the server whenever you are online. Open the same link on another device to see the same list.</p>
+    <label class="small" style="display:flex;gap:8px;align-items:center;margin:12px 0;color:var(--ink);font-size:14px"><input type="checkbox" id="inst" style="width:20px;height:20px;accent-color:var(--ac)"> Save messages shared from WhatsApp at once (with the selected defaults)</label>
     <div class="acts"><a class="ab" href="bulletin.html" style="text-decoration:none;display:inline-flex;align-items:center">Open desktop bulletin</a><button class="ab" id="exp">Download backup (JSON)</button><button class="ab" id="back">Back</button></div>
   </div>
 </section>
 </main>
 <footer>Follow-ups · Saurabh</footer>
+<div class="wsb hide" id="wsb" role="dialog" aria-label="Who sent it">
+  <div class="wh"><span id="wsMsg"></span><button id="wsUndo" type="button">Undo</button><button id="wsX" type="button" aria-label="Close">×</button></div>
+  <div class="wl">Who sent it?</div>
+  <div class="chips" id="wsChips"></div>
+  <div class="wo hide" id="wsO"><input id="wsIn" placeholder="Name, e.g. MD Buidco" autocomplete="off" list="dl-fromN"><button id="wsOk" type="button">OK</button></div>
+  <div class="wbar"><i id="wsT"></i></div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -203,7 +221,8 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const K={t:'fu.tasks',q:'fu.queue',c:'fu.cfg',d:'fu.draft'};
 const load=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
 const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-let tasks=load(K.t,[]), queue=load(K.q,[]), cfg=load(K.c,{}), filt='open', syncing=false, retryT=null, tries=0;
+const qid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);   // unique id per change, so two open pages never drop each other's changes
+let tasks=load(K.t,[]), queue=load(K.q,[]).map(o=>o.qid?o:{...o,qid:qid()}), cfg=load(K.c,{}), filt='open', hold=0, syncing=false, retryT=null, tries=0;
 
 // one-time link setup: index.html#u=<server>&k=<key>
 if(location.hash.length>3){const p=new URLSearchParams(location.hash.slice(1));
@@ -234,7 +253,7 @@ $$('.tab').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $('#gear').onclick=()=>show('set');$('#back').onclick=()=>show('add');
 
 // chips (single select; tap again to clear, except deadline)
-$$('.chips').forEach(g=>g.addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;
+$$('.chips[data-g]').forEach(g=>g.addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;
   const on=c.classList.contains('on');
   if(g.dataset.keep&&on&&c.dataset.v!=='pick')return;
   g.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
@@ -290,10 +309,11 @@ function sniff(t){const m=t.match(/^\s*\[\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?,
 
 // draft kept on device
 function saveDraft(){store(K.d,{t:txt.value,org:pick('org'),from:pick('from'),src:pick('src'),nm:$('#nm').value,urg:pick('urg'),orgO:$('#orgO').value,fromN:$('#fromN').value})}
-(()=>{const d=load(K.d,null);if(!d)return;txt.value=d.t||'';['org','from','src','urg'].forEach(g=>d[g]&&setPick(g,d[g]));$('#nm').value=d.nm||'';$('#orgO').value=d.orgO||'';$('#fromN').value=d.fromN||'';pops()})();
+function applyDraft(d){if(!d)return;txt.value=d.t||'';['org','from','src','urg'].forEach(g=>d[g]&&setPick(g,d[g]));$('#nm').value=d.nm||'';$('#orgO').value=d.orgO||'';$('#fromN').value=d.fromN||'';pops()}
+applyDraft(load(K.d,null));
 
 // save
-function addTask(){
+function addTask(opts){
   const t=txt.value.trim();const err=$('#err');
   if(!t){txt.classList.add('bad');err.textContent='Please paste or type the task first.';err.classList.remove('hide');txt.focus();txt.scrollIntoView({block:'center'});return}
   err.classList.add('hide');
@@ -305,14 +325,16 @@ function addTask(){
   const now=new Date().toISOString();
   const task={id:'T'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),created:now,text:t,org,from,
     name:$('#nm').value.trim(),source:pick('src'),due,urgent:pick('urg')?'Yes':'',status:'Open',doneOn:'',updated:now,remarks:''};
-  tasks.unshift(task);queue.push({op:'add',t:task});store(K.t,tasks);store(K.q,queue);
+  tasks=load(K.t,tasks);tasks.unshift(task);queue=load(K.q,queue);queue.push({op:'add',t:task,qid:qid()});store(K.t,tasks);store(K.q,queue);
   // reset
   txt.value='';$('#nm').value='';$('#orgO').value='';$('#fromN').value='';Object.keys(DEF).forEach(g=>setPick(g,DEF[g]));setPick('due','1');$('#dueDate').classList.add('hide');pops();
   localStorage.removeItem(K.d);
-  toast('Saved · follow up <b>'+dueLabel(due)+'</b>');counts();refreshSugg();txt.focus();sync();
+  counts();refreshSugg();
+  if(opts&&opts.shared){showWho(task,due)}
+  else{toast('Saved · follow up <b>'+dueLabel(due)+'</b>');txt.focus();sync()}
 }
 $('#saveBtn').onclick=addTask;
-document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&!$('#v-add').classList.contains('hide')){e.preventDefault();addTask()}});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&!$('#v-add').classList.contains('hide')&&!e.target.closest('#wsb')){e.preventDefault();addTask()}});
 
 // list
 const isOpen=t=>t.status!=='Done';
@@ -336,7 +358,7 @@ function renderList(){counts();const td=today(),q=$('#q').value.trim().toLowerCa
   if(fo)a=a.filter(t=>fo==='Other'?t.org&&(t.org==='Other'||!STD.includes(t.org)):t.org===fo);
   if(q)a=a.filter(t=>[t.text,t.org,t.from,t.name,t.source,t.remarks].join(' ').toLowerCase().includes(q));
   if(filt==='done')a.sort((x,y)=>(y.doneOn||'').localeCompare(x.doneOn||'')||y.updated.localeCompare(x.updated));
-  else a.sort((x,y)=>x.due.localeCompare(y.due)||(y.urgent?1:0)-(x.urgent?1:0)||y.created.localeCompare(x.created));
+  else a.sort((x,y)=>x.due.localeCompare(y.due)||(y.urgent?1:0)-(x.urgent?1:0)||(y.created||'').localeCompare(x.created||''));
   const L=$('#list');
   if(!a.length){L.innerHTML='<div class="empty">'+(filt==='due'?'Nothing due. Well done.':'Nothing here.')+'</div>';return}
   L.innerHTML=a.slice(0,300).map(t=>{const o=isOpen(t),n=dayDiff(t.due),cls=(!o?'dn':n<0?'od':n===0?'td':'')+(openIds.has(t.id)?' ex':'');
@@ -352,16 +374,16 @@ function renderList(){counts();const td=today(),q=$('#q').value.trim().toLowerCa
         <div class="ib"><div class="it">${t.urgent&&o?'<span class="tag u">Urgent</span> ':''}${esc(t.text)}</div><div class="sub">${sub}</div></div>
         <div class="rt"><span class="due">${o?esc(dueLabel(t.due)):'Done'}</span><span class="chev">›</span></div></div>
       <div class="det"><dl class="dl">${dl}</dl>
-        <div class="note"><input type="text" data-n="1" placeholder="Add a note (reply, status…)" value="${esc(t.remarks)}"><button class="ab" data-a="note">Save note</button></div>
+        <div class="note"><div class="small" style="margin:2px 0 4px">Issue</div><textarea data-x="1" style="min-height:90px">${esc(t.text)}</textarea><div class="small" style="margin:8px 0 4px">Note</div><textarea data-n="1" placeholder="Your note or instructions (goes into the WhatsApp message)">${esc(t.remarks)}</textarea><button class="ab" data-a="note">Save changes</button></div>
         <div class="acts">${acts}</div></div></div>`}).join('');
 }
 function change(t,f,msg,undo){f.updated=new Date().toISOString();Object.assign(t,f);
-  queue.push({op:'upd',id:t.id,f:{...f}});store(K.t,tasks);store(K.q,queue);counts();toast(msg,undo);sync()}
+  queue=load(K.q,queue);queue.push({op:'upd',id:t.id,f:{...f},qid:qid()});store(K.t,tasks);store(K.q,queue);counts();toast(msg,undo);sync()}
 $('#seg').onclick=e=>{const c=e.target.closest('.chip');if(!c)return;filt=c.dataset.f;$$('#seg .chip').forEach(x=>x.classList.toggle('on',x===c));renderList()};
 $('#q').oninput=renderList;$('#fo').onchange=renderList;
-$('#list').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset.n){e.preventDefault();e.target.closest('.item').querySelector('[data-a=note]').click()}});
+$('#list').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)&&(e.target.dataset.n||e.target.dataset.x)){e.preventDefault();e.target.closest('.item').querySelector('[data-a=note]').click()}});
 $('#list').onclick=e=>{const it=e.target.closest('.item');if(!it)return;const t=tasks.find(x=>x.id===it.dataset.id);if(!t)return;
-  if(e.target.closest('input'))return;
+  if(e.target.closest('input,textarea'))return;
   const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
   if(a==='exp'){openIds.has(t.id)?openIds.delete(t.id):openIds.add(t.id);it.classList.toggle('ex');return}
   if(a==='cp'){navigator.clipboard?.writeText(waText(t)).then(()=>toast('Copied for WhatsApp'));return}
@@ -370,7 +392,9 @@ $('#list').onclick=e=>{const it=e.target.closest('.item');if(!it)return;const t=
     if(isOpen(t)){it.classList.add('leaving');change(t,{status:'Done',doneOn:today()},'Marked done',undo)}
     else{const f={status:'Open',doneOn:''};if(t.due<today())f.due=today();it.classList.remove('dn');change(t,f,'Marked not done',undo)}
     setTimeout(renderList,450);return}
-  if(a==='note'){const v=it.querySelector('[data-n]').value.trim();if(v===(t.remarks||''))return;change(t,{remarks:v},'Note saved');renderList();return}
+  if(a==='note'){const v=it.querySelector('[data-n]').value.trim(),x=it.querySelector('[data-x]').value.trim();
+    if(!x){toast('The issue cannot be empty.');return}
+    const f={};if(x!==t.text)f.text=x;if(v!==(t.remarks||''))f.remarks=v;if(!Object.keys(f).length)return;change(t,f,'Saved');renderList();return}
   if(a==='s1'||a==='s7'){const base=t.due>today()?t.due:today();change(t,{due:addDays(base,a==='s1'?1:7)},'Moved to <b>'+dueLabel(addDays(base,a==='s1'?1:7))+'</b>');renderList()}
 };
 
@@ -382,10 +406,11 @@ function badge(state){const s=$('#sync');s.className='sync';
 $('#sync').onclick=()=>{if(!cfg.u){show('set');return}tries=0;sync();pull()};
 
 async function sync(){badge();if(!cfg.u||syncing||!queue.length)return;
+  if(Date.now()<hold){clearTimeout(retryT);retryT=setTimeout(sync,hold-Date.now()+50);return}   // keep Undo possible for a few seconds
   syncing=true;badge('busy');const batch=queue.slice(0,50);
   try{const r=await fetch(cfg.u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:cfg.k,ops:batch})});
     const j=await r.json();if(!j.ok)throw new Error(j.error||'server');
-    queue.splice(0,batch.length);store(K.q,queue);tries=0;syncing=false;badge();if(queue.length)sync();
+    const sent=new Set(batch.map(o=>o.qid));queue=load(K.q,queue).filter(o=>!sent.has(o.qid));store(K.q,queue);tries=0;syncing=false;badge();if(queue.length)sync();
   }catch(e){syncing=false;badge();
     if(String(e.message)==='key'){toast('The key is not right. Please check settings.');return}
     clearTimeout(retryT);retryT=setTimeout(sync,[4e3,15e3,60e3][Math.min(tries++,2)]);}
@@ -397,10 +422,13 @@ async function pull(){if(!cfg.u)return;const t0=Date.now()-5000;
     tasks.forEach(t=>{if(pending.has(t.id)||Date.parse(t.updated)>=t0)byId.set(t.id,t)});
     // keep older done items that the server no longer sends
     tasks.forEach(t=>{if(!byId.has(t.id)&&!isOpen(t))byId.set(t.id,t)});
-    tasks=[...byId.values()].sort((a,b)=>b.created.localeCompare(a.created));store(K.t,tasks);
-    counts();refreshSugg();if(!$('#v-list').classList.contains('hide'))renderList();
+    tasks=[...byId.values()].sort((a,b)=>(b.created||'').localeCompare(a.created||''));store(K.t,tasks);
+    counts();refreshSugg();if(!$('#v-list').classList.contains('hide')&&!(document.activeElement&&document.activeElement.closest('#list textarea')))renderList();
   }catch(e){}
 }
+// another page (e.g. the bulletin) changed the saved data: pick it up
+window.addEventListener('storage',e=>{if(e.key===K.t){tasks=load(K.t,[]);counts();if(!$('#v-list').classList.contains('hide')&&!document.activeElement.matches('textarea'))renderList()}
+  if(e.key===K.q){queue=load(K.q,[]);badge()}});
 window.addEventListener('online',()=>{tries=0;sync()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){sync();pull();counts()}});
 
@@ -409,8 +437,57 @@ $('#setSave').onclick=()=>{let u=$('#su').value.trim(),k=$('#sk').value.trim();
   const h=u.indexOf('#u=');if(h>-1){const p=new URLSearchParams(u.slice(h+1));u=p.get('u')||'';k=p.get('k')||k}
   if(!/^https:\/\//.test(u)){$('#su').classList.add('bad');return}$('#su').classList.remove('bad');
   cfg={u,k};store(K.c,cfg);toast('Linked. Syncing…');show('add');sync();pull()};
+(()=>{const c=$('#inst');try{c.checked=localStorage.getItem('fu.instant')!=='0'}catch(e){}c.onchange=()=>{try{localStorage.setItem('fu.instant',c.checked?'1':'0')}catch(e){};toast(c.checked?'Shared messages will be saved at once':'Shared messages will wait for you to tap Save')}})();
 $('#exp').onclick=()=>{const b=new Blob([JSON.stringify(tasks,null,1)],{type:'application/json'});const a=document.createElement('a');
   a.href=URL.createObjectURL(b);a.download='followups-'+today()+'.json';a.click()};
+
+// Undo a just-saved task (only while it has not been sent yet)
+function undoAdd(id){queue=load(K.q,queue);const i=queue.findIndex(o=>o.op==='add'&&o.t&&o.t.id===id);
+  if(i>-1){queue.splice(i,1);tasks=load(K.t,tasks).filter(t=>t.id!==id);store(K.q,queue);store(K.t,tasks);counts();badge();toast('Removed')}
+  else{const t=tasks.find(x=>x.id===id);if(t)change(t,{status:'Done',doneOn:today(),remarks:'Cancelled'},'Removed')}}
+
+// "Who sent it?" bar after a shared message: one tap sets From (and the office last used with that person).
+// Sending waits while the bar is open, so the choice goes to the sheet with the task itself.
+let wsId=null,wsTimer=null;const WS_SECS=15;
+const whoLabel=f=>f.includes(' – ')?f.split(' – ').slice(1).join(' – '):f;
+function whoOptions(){const fixed=['CMD','RCD Secretary','Chief Secretary'],seen=new Set(fixed),rec=[];
+  [...tasks].sort((a,b)=>(b.created||'').localeCompare(a.created||'')).forEach(t=>{const f=(t.from||'').trim();
+    if(f.includes(' – ')&&!seen.has(f)&&rec.length<6){seen.add(f);rec.push(f)}});
+  return [...fixed,...rec]}
+function lastOrg(f){const t=[...tasks].filter(x=>x.from===f&&x.id!==wsId).sort((a,b)=>(b.created||'').localeCompare(a.created||''))[0];return t?t.org:''}
+function wsCountdown(){const i=$('#wsT');i.style.transition='none';i.style.width='100%';void i.offsetWidth;i.style.transition=`width ${WS_SECS}s linear`;i.style.width='0%';
+  clearTimeout(wsTimer);wsTimer=setTimeout(closeWho,WS_SECS*1000);hold=Date.now()+WS_SECS*1000+2000}
+function wsPause(){clearTimeout(wsTimer);const i=$('#wsT');i.style.transition='none';i.style.width=getComputedStyle(i).width;hold=Date.now()+600000}
+function showWho(task,due){wsId=task.id;
+  $('#wsMsg').innerHTML='Saved · follow up <b>'+esc(dueLabel(due))+'</b>';
+  $('#wsChips').innerHTML=whoOptions().map(f=>`<button type="button" class="chip${f===task.from?' on':''}" data-f="${esc(f)}">${esc(whoLabel(f))}</button>`).join('')+
+    '<button type="button" class="chip" data-f="__other">Other…</button>';
+  $('#wsO').classList.add('hide');$('#wsIn').value='';$('#wsb').classList.remove('hide');wsCountdown()}
+function closeWho(){clearTimeout(wsTimer);$('#wsb').classList.add('hide');wsId=null;hold=0;sync()}
+function setWho(f){const t=tasks.find(x=>x.id===wsId);if(!t)return closeWho();
+  const fl={from:f},org=lastOrg(f);if(org)fl.org=org;
+  queue=load(K.q,queue);const op=queue.find(o=>o.op==='add'&&o.t&&o.t.id===t.id);
+  if(op){Object.assign(t,fl);Object.assign(op.t,fl);store(K.t,tasks);store(K.q,queue)}else change(t,{...fl},'');
+  closeWho();refreshSugg();toast('From <b>'+esc(whoLabel(f))+'</b>'+(fl.org?' · '+esc(fl.org==='Energy'?'Energy Dept':fl.org):''))}
+$('#wsChips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;
+  if(c.dataset.f==='__other'){wsPause();$('#wsO').classList.remove('hide');$('#wsIn').focus();return}
+  setWho(c.dataset.f)});
+$('#wsOk').onclick=()=>{const v=$('#wsIn').value.trim();if(!v){$('#wsIn').focus();return}setWho('Other officer – '+v)};
+$('#wsIn').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#wsOk').click()}});
+$('#wsUndo').onclick=()=>{const id=wsId;clearTimeout(wsTimer);$('#wsb').classList.add('hide');wsId=null;undoAdd(id);hold=0;sync()};
+$('#wsX').onclick=closeWho;
+
+// Shared from WhatsApp or any app through the phone's Share menu: index.html?text=…
+(()=>{const p=new URLSearchParams(location.search);const text=(p.get('text')||'').trim(),title=(p.get('title')||'').trim(),url=(p.get('url')||'').trim();
+  let sh=text||title;if(url&&!sh.includes(url))sh=(sh?sh+'\n':'')+url;
+  if(!sh)return;history.replaceState(null,'',location.pathname);
+  const draft=load(K.d,null);let instant=true;try{instant=localStorage.getItem('fu.instant')!=='0'}catch(e){}
+  // start from a clean form with the defaults, so a half-typed draft never mixes into the shared message
+  $('#nm').value='';$('#orgO').value='';$('#fromN').value='';Object.keys(DEF).forEach(g=>setPick(g,DEF[g]));setPick('due','1');$('#dueDate').classList.add('hide');pops();
+  txt.value=sh;sniff(sh);
+  if(instant){addTask({shared:true});if(draft&&(draft.t||'').trim()){applyDraft(draft);store(K.d,draft)}}
+  else{saveDraft();toast('Message added. Check the options and tap Save.')}
+})();
 
 // start
 refreshSugg();
