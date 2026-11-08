@@ -120,7 +120,7 @@ function shell(){
     <select id="fo"><option value="">All offices</option>${STD.map(o=>`<option value="${o}">${o==='Energy'?'Energy Dept':o}</option>`).join('')}<option value="Other">Other offices</option></select>
     <input type="search" id="q" placeholder="Search tasks, names…">
     <span class="sp"></span><span class="sync" id="sync"></span>
-    <button class="tb" id="rf">Refresh</button><button class="tb" id="pr">Export PDF</button><a class="tb" href="index.html">+ Add task</a>
+    <button class="tb" id="rf">Refresh</button><button class="tb" id="pr">Export PDF</button><a class="tb" href="sticky.html" target="_blank" rel="noopener">Sticky note</a><a class="tb" href="index.html">+ Add task</a>
   </div><div id="secs"></div>`;
   $('#fo').onchange=e=>{office=e.target.value;render()};
   $('#q').oninput=e=>{query=e.target.value.trim().toLowerCase();render()};

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Follow-ups Note</title>
+<link rel="icon" href="icon-192.png">
+<style id="sty">
+:root{--paper:#faf6ee;--head:#f3ecdf;--line:#e4dccb;--ink:#2a251f;--mu:#6f675a;--ac:#0f8a7e;--ac2:#0b6f66;--er:#b3261e;--wa:#8a5a00;--ok:#1a7f45}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--paper)}
+body{font:13.5px/1.4 "Segoe UI",system-ui,-apple-system,sans-serif;color:var(--ink)}
+button{font:inherit;color:inherit;cursor:pointer}
+#note{display:flex;flex-direction:column;height:100%;background:var(--paper)}
+.hd{display:flex;align-items:center;gap:6px;padding:8px 10px 6px;background:var(--head);border-bottom:3px double var(--ink);flex:none}
+.hd b{font:700 18px/1.2 Georgia,'Times New Roman',serif;letter-spacing:.2px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib{border:0;background:transparent;border-radius:6px;min-width:30px;height:30px;padding:0 6px;font-size:15px;line-height:1;color:var(--mu)}
+.ib:hover{background:rgba(0,0,0,.07);color:var(--ink)}
+.ib.on{color:var(--ac2);background:rgba(15,138,126,.12)}
+.sum{padding:5px 10px;font-size:11.5px;letter-spacing:.4px;text-transform:uppercase;color:var(--mu);border-bottom:1px solid var(--ink);flex:none;background:var(--head)}
+.sum .od{color:var(--er);font-weight:700}.sum .td{color:var(--wa);font-weight:700}
+.list{flex:1;overflow:auto;padding:2px 0 8px}
+.sec{font:700 14px/1.2 Georgia,serif;color:var(--ink);margin:10px 10px 2px;padding-top:5px;border-top:2px solid var(--ink)}
+.sec.od{color:var(--er);border-top-color:var(--er)}.sec.td{color:var(--wa);border-top-color:var(--wa)}
+.it{display:flex;gap:6px;align-items:flex-start;padding:5px 10px 7px 4px;border-bottom:1px solid var(--line);transition:opacity .35s}
+.ck{flex:none;width:30px;height:30px;border:0;background:none;display:grid;place-items:center;padding:0}
+.ck i{width:17px;height:17px;border:2px solid #b5aa95;border-radius:50%;display:grid;place-items:center;background:#fffdf8;transition:.15s}
+.ck svg{opacity:0}.ck:hover i{border-color:var(--ok)}
+.it.gone{opacity:.25}.it.gone .ck i{background:var(--ok);border-color:var(--ok)}.it.gone .ck svg{opacity:1}.it.gone .tx{text-decoration:line-through}
+.bd{flex:1;min-width:0;padding-top:5px;cursor:pointer}
+.tx{font:600 14px/1.38 Georgia,'Times New Roman',serif;color:#241f1a;white-space:pre-wrap;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.it.open .tx{display:block}
+.mt{font-size:11.5px;color:var(--mu);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it.open .mt{white-space:normal}
+.rm{display:none;font-size:12px;margin-top:3px;padding:2px 6px;border-left:2px solid var(--ac);background:#f1ebde;white-space:pre-wrap;word-break:break-word}
+.it.open .rm{display:block}
+.dd{flex:none;font-size:11px;font-weight:700;padding:1px 6px;border-radius:99px;margin-top:6px;background:#ece5d6;color:var(--mu);white-space:nowrap}
+.dd.od{background:#f3ddd8;color:var(--er)}.dd.td{background:#f2e4c6;color:var(--wa)}
+.u{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--er);margin-right:5px;vertical-align:1px}
+.more{display:block;width:calc(100% - 20px);margin:8px 10px 0;border:1px dashed #cfc4ad;background:transparent;border-radius:8px;padding:6px;color:var(--mu);font-size:12.5px}
+.empty{text-align:center;color:var(--mu);padding:28px 12px}
+.link{padding:14px 12px}.link input{width:100%;padding:7px 8px;border:1px solid #cfc4ad;border-radius:6px;margin:8px 0;font:inherit;background:#fffdf8}
+.link button{border:0;background:var(--ac);color:#fff;border-radius:6px;padding:7px 14px;font-weight:700}
+.toast{position:absolute;left:8px;right:8px;bottom:8px;background:#2a251f;color:#fff;border-radius:8px;padding:8px 10px;font-size:12.5px;display:none;align-items:center;gap:8px}
+.toast.show{display:flex}.toast span{flex:1}.toast button{border:0;background:none;color:#9fe3d7;font-weight:700}
+#note{position:relative}
+</style>
+</head>
+<body>
+<div id="note">
+  <div class="hd">
+    <b>Follow-ups</b>
+    <button class="ib" data-k="add" title="Add a task">＋</button>
+    <button class="ib" data-k="ref" title="Refresh">⟳</button>
+    <button class="ib" data-k="pin" title="Keep on top of other windows">📌</button>
+  </div>
+  <div class="sum" data-r="sum">Loading…</div>
+  <div class="list" data-r="list"></div>
+  <div class="toast" data-r="toast"><span></span><button data-k="undo">Undo</button></div>
+</div>
+<script>
+(()=>{
+// All lookups go through R (the note), so it keeps working when moved into the floating window.
+const R=document.getElementById('note'),$=s=>R.querySelector(s);
+const K={t:'fu.tasks',q:'fu.queue',c:'fu.cfg'};
+const load=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
+const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const qid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+let cfg=load(K.c,{}),syncing=false,tries=0,retryT,showLater=false,openIds=new Set(),undoFn=null,tt,pip=null;
+if(location.hash.length>3){const p=new URLSearchParams(location.hash.slice(1));if(p.get('u')&&p.get('k')){cfg={u:p.get('u'),k:p.get('k')};store(K.c,cfg)}history.replaceState(null,'',location.pathname)}
+
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=()=>ymd(new Date());
+const addDays=(s,n)=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return ymd(d)};
+const diff=s=>Math.round((new Date(s+'T00:00:00')-new Date(today()+'T00:00:00'))/864e5);
+const fmt=s=>new Date(s+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const CHECK='<i><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></i>';
+const ref=f=>{f=(f||'').trim();return f.includes(' – ')?f.split(' – ').slice(1).join(' – '):f};
+
+function toast(m,u){const t=$('[data-r=toast]');t.querySelector('span').textContent=m;undoFn=u||null;
+  t.querySelector('button').style.display=u?'':'none';t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>{t.classList.remove('show');undoFn=null},u?5000:2000)}
+
+function row(t){const n=diff(t.due),cls=n<0?'od':n===0?'td':'';
+  const lbl=n<0?(-n)+'d late':n===0?'Today':n===1?'Tomorrow':fmt(t.due);
+  const meta=[t.org==='Energy'?'Energy Dept':t.org,ref(t.from),t.source].filter(Boolean).map(esc).join(' · ');
+  return `<div class="it${openIds.has(t.id)?' open':''}" data-id="${esc(t.id)}">
+    <button class="ck" data-k="done" title="Dispose">${CHECK}</button>
+    <div class="bd" data-k="tog"><div class="tx">${t.urgent?'<span class="u" title="Urgent"></span>':''}${esc(t.text)}</div>
+      <div class="mt">${meta}</div>${t.remarks?`<div class="rm">${esc(t.remarks)}</div>`:''}</div>
+    <span class="dd ${cls}">${lbl}</span></div>`}
+
+function render(){const L=$('[data-r=list]'),S=$('[data-r=sum]');
+  if(!cfg.u){S.textContent='Not linked';L.innerHTML=`<div class="link">Paste your setup link once (the one ending in <b>&amp;k=…</b>):<input data-r="lk" placeholder="https://…github.io/MDFolloup/#u=…&k=…"><button data-k="link">Link</button></div>`;return}
+  const td=today(),wk=addDays(td,7),open=load(K.t,[]).filter(t=>t.status!=='Done');
+  const by=(a,b)=>a.due.localeCompare(b.due)||(b.urgent?1:0)-(a.urgent?1:0)||(a.created||'').localeCompare(b.created||'');
+  const G=[['od','Overdue',open.filter(t=>t.due<td)],['td','Today',open.filter(t=>t.due===td)],['wk','Next 7 days',open.filter(t=>t.due>td&&t.due<=wk)],['lt','Later',open.filter(t=>t.due>wk)]].map(g=>(g[2].sort(by),g));
+  S.innerHTML=[G[0][2].length&&`<span class="od">${G[0][2].length} overdue</span>`,G[1][2].length&&`<span class="td">${G[1][2].length} today</span>`,open.length+' open'].filter(Boolean).join(' · ');
+  if(!open.length){L.innerHTML='<div class="empty">All clear ✓<br><small>No pending follow-ups.</small></div>';return}
+  let h='';G.slice(0,3).forEach(([k,n,a])=>{if(a.length)h+=`<div class="sec ${k}">${n} · ${a.length}</div>`+a.map(row).join('')});
+  const later=G[3][2];
+  if(later.length)h+=showLater?`<div class="sec">Later · ${later.length}</div>`+later.map(row).join('')+`<button class="more" data-k="later">Hide later</button>`
+                              :`<button class="more" data-k="later">Show later (${later.length})</button>`;
+  L.innerHTML=h;
+  badgePin();
+}
+
+function change(id,f,msg,undo){const ts=load(K.t,[]),t=ts.find(x=>x.id===id);if(!t)return;
+  f.updated=new Date().toISOString();Object.assign(t,f);store(K.t,ts);
+  const q=load(K.q,[]);q.push({op:'upd',id,f:{...f},qid:qid()});store(K.q,q);if(msg)toast(msg,undo);sync()}
+
+R.addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;const k=b.dataset.k;
+  if(k==='add'){window.open('index.html','_blank');return}
+  if(k==='ref'){tries=0;sync();pull(true);return}
+  if(k==='pin'){pip?pip.close():pinOnTop();return}
+  if(k==='later'){showLater=!showLater;render();return}
+  if(k==='undo'){if(undoFn){const f=undoFn;undoFn=null;f()}$('[data-r=toast]').classList.remove('show');return}
+  if(k==='link'){const v=$('[data-r=lk]').value.trim(),i=v.indexOf('#u=');if(i<0)return;const p=new URLSearchParams(v.slice(i+1));
+    cfg={u:p.get('u'),k:p.get('k')};store(K.c,cfg);render();pull();return}
+  const it=b.closest('.it');if(!it)return;const id=it.dataset.id,t=load(K.t,[]).find(x=>x.id===id);if(!t)return;
+  if(k==='tog'){openIds.has(id)?openIds.delete(id):openIds.add(id);it.classList.toggle('open');return}
+  if(k==='done'){const prev={status:t.status,doneOn:t.doneOn};it.classList.add('gone');
+    change(id,{status:'Done',doneOn:today()},'Disposed',()=>{change(id,{...prev},'Restored');render()});setTimeout(render,400)}
+});
+
+async function sync(){const q=load(K.q,[]).map(o=>o.qid?o:{...o,qid:qid()});if(!cfg.u||syncing||!q.length)return;store(K.q,q);syncing=true;const batch=q.slice(0,50);
+  try{const r=await fetch(cfg.u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:cfg.k,ops:batch})});
+    const j=await r.json();if(!j.ok)throw new Error(j.error||'server');
+    const sent=new Set(batch.map(o=>o.qid));store(K.q,load(K.q,[]).filter(o=>!sent.has(o.qid)));tries=0;syncing=false;if(load(K.q,[]).length)sync();
+  }catch(e){syncing=false;if(e.message==='key'){toast('The key is not right. Link again.');return}clearTimeout(retryT);retryT=setTimeout(sync,[4e3,15e3,60e3][Math.min(tries++,2)])}}
+async function pull(say){if(!cfg.u)return;const t0=Date.now()-5000;
+  try{const r=await fetch(cfg.u+'?a=list&k='+encodeURIComponent(cfg.k));const j=await r.json();if(!j.ok)return;
+    const local=load(K.t,[]),pending=new Set(load(K.q,[]).map(o=>o.id||o.t.id)),byId=new Map(j.tasks.map(t=>[t.id,t]));
+    local.forEach(t=>{if(pending.has(t.id)||Date.parse(t.updated)>=t0)byId.set(t.id,t)});
+    local.forEach(t=>{if(!byId.has(t.id)&&t.status==='Done')byId.set(t.id,t)});
+    store(K.t,[...byId.values()].sort((a,b)=>(b.created||'').localeCompare(a.created||'')));render();if(say)toast('Updated');
+  }catch(e){if(say)toast('Offline. Showing saved copy.')}}
+
+// Keep on top: a small floating window that stays above all other windows (Chrome / Edge 116+)
+function badgePin(){const b=$('[data-k=pin]');if(!b)return;b.classList.toggle('on',!!pip);b.title=pip?'Put back':'Keep on top of other windows';
+  if(!('documentPictureInPicture' in window))b.style.display='none'}
+async function pinOnTop(){try{
+  pip=await documentPictureInPicture.requestWindow({width:Math.max(300,R.offsetWidth||340),height:Math.max(420,R.offsetHeight||520)});
+  const st=document.getElementById('sty').cloneNode(true);pip.document.head.appendChild(st);pip.document.title='Follow-ups';
+  pip.document.body.appendChild(R);badgePin();
+  const home=document.body;const ph=document.createElement('div');ph.className='empty';ph.id='ph';ph.textContent='Showing in the floating window. Close it to bring the note back here.';home.appendChild(ph);
+  pip.addEventListener('pagehide',()=>{home.appendChild(R);const p=document.getElementById('ph');if(p)p.remove();pip=null;badgePin()});
+  pip.addEventListener('focus',()=>{sync();pull()});
+ }catch(e){toast('Keep on top needs Chrome or Edge')}}
+
+window.addEventListener('storage',e=>{if(e.key===K.t)render()});
+window.addEventListener('focus',()=>{sync();pull()});
+setInterval(()=>{sync();pull()},120000);
+setInterval(render,600000);
+render();sync();pull();
+})();
+</script>
+</body>
+</html>
