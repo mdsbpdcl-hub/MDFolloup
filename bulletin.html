@@ -46,7 +46,12 @@ h2.od{border-top-color:var(--er)}h2.od span{color:var(--er)}
 .kick .late{color:var(--er)}.kick .tdy{color:var(--wa)}.kick .urg{color:#fff;background:var(--er);padding:0 6px;border-radius:3px}
 .story h3{font:700 16.5px/1.35 Georgia,serif;margin:4px 0 3px;word-break:break-word;cursor:pointer}
 .body{font-size:14px;color:#33404d;white-space:pre-wrap;word-break:break-word;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
-.story.open .body{display:block}
+.story{cursor:pointer}
+.full{display:none;margin:4px 0 3px;font-size:15px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.full b{font:700 16.5px/1.35 Georgia,serif}
+.story.open .full{display:block}.story.open h3,.story.open .body,.story.open .more{display:none}
+.more{font-size:12px;color:var(--ac2);font-weight:600;margin-top:2px}
+.story .acts,.story .nb{cursor:default}
 .meta{font-size:12px;color:var(--mu);margin-top:4px}
 .rem{font-size:13px;margin-top:5px;padding:4px 8px;background:var(--pg);border-left:3px solid var(--fb);color:var(--ink)}
 .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
@@ -61,10 +66,10 @@ h2.od{border-top-color:var(--er)}h2.od span{color:var(--er)}
 .link{max-width:560px;margin:30px auto;text-align:center}
 .link input{width:100%;min-height:40px;border:1px solid var(--fb);border-radius:8px;padding:8px 10px;margin:10px 0}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(160%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;transition:transform .18s;z-index:9}
-.toast.show{transform:translateX(-50%) translateY(0)}
+.toast{visibility:hidden}.toast.show{transform:translateX(-50%) translateY(0);visibility:visible}
 .toast button{background:none;border:0;color:#9fe3d7;font-weight:700;margin-left:10px;cursor:pointer}
 @media(max-width:760px){.sheet{margin:0;border:0;padding:14px}.mast h1{font-size:30px}.strap{grid-template-columns:repeat(2,1fr)}.tool input{width:100%}}
-@media print{body{background:#fff}.sheet{border:0;margin:0;padding:0;max-width:none}.tool,.acts,.nb,.toast,.noprint{display:none!important}
+@media print{.more{display:none!important}body{background:#fff}.sheet{border:0;margin:0;padding:0;max-width:none}.tool,.acts,.nb,.toast,.noprint{display:none!important}
   .cols{columns:2}.body{display:block}@page{size:A4;margin:12mm}}
 </style>
 </head>
@@ -121,6 +126,7 @@ function shell(){
 }
 
 function story(t,done){const n=diff(t.due),lines=t.text.trim().split('\n');let head=lines[0],rest=lines.slice(1).join('\n').trim();
+  const long=head.length>140||rest.split('\n').length>4||rest.length>320;
   if(head.length>140){rest=(head.slice(110)+'\n'+rest).trim();head=head.slice(0,110).replace(/\s+\S*$/,'')+'…'}
   const kick=[t.urgent&&!done?'<span class="urg">Urgent</span>':'',
     done?`<span style="color:var(--ok)">Disposed ${t.doneOn?esc(fmt(t.doneOn)):''}</span>`:n<0?`<span class="late">${-n} day${n===-1?'':'s'} overdue</span>`:n===0?'<span class="tdy">Due today</span>':`<span>Due ${esc(fmt(t.due))}</span>`,
@@ -130,7 +136,8 @@ function story(t,done){const n=diff(t.due),lines=t.text.trim().split('\n');let h
     :`<button class="ab dsp" data-a="dsp">✓ Dispose</button><button class="ab" data-a="note">${t.remarks?'Edit note':'Add note'}</button><button class="ab" data-a="d1">+1 day</button><button class="ab" data-a="d7">+1 week</button><button class="ab" data-a="cp">Copy</button>`;
   const nb=noteId===t.id?`<div class="nb"><input data-note="${esc(t.id)}" value="${esc(t.remarks)}" placeholder="Note, e.g. report received / reply sent"><button class="ab dsp" data-a="ns">Save</button><button class="ab" data-a="nx">Cancel</button></div>`:'';
   return `<article class="story${done?' done':''}${openIds.has(t.id)?' open':''}" data-id="${esc(t.id)}">
-    <div class="kick">${kick}</div><h3 data-a="tg">${esc(head)}</h3>${rest?`<div class="body" data-a="tg">${esc(rest)}</div>`:''}
+    <div class="kick">${kick}</div><h3>${esc(head)}</h3>${rest?`<div class="body">${esc(rest)}</div>`:''}
+    ${long?'<div class="more">Show full text ▾</div>':''}<div class="full"><b>${esc(lines[0])}</b>${lines.length>1?'\n'+esc(lines.slice(1).join('\n').trim()):''}</div>
     <div class="meta">${meta}</div>${t.remarks?`<div class="rem">${esc(t.remarks)}</div>`:''}${nb}<div class="acts">${acts}</div></article>`}
 
 function render(){if(!$('#secs'))return;const td=today(),all=load(K.t,[]);
@@ -155,9 +162,9 @@ function change(id,f,msg,undo,delay){const ts=load(K.t,[]),t=ts.find(x=>x.id===i
   if(msg)toast(msg,undo);delay?setTimeout(render,delay):render();sync()}
 function saveNote(id,v){noteId=null;const t=load(K.t,[]).find(x=>x.id===id);if(t&&(t.remarks||'')!==v.trim())change(id,{remarks:v.trim()},'Note saved');else render()}
 
-function onClick(e){const s=e.target.closest('.story');if(!s)return;const id=s.dataset.id,b=e.target.closest('[data-a]');if(!b)return;
+function onClick(e){const s=e.target.closest('.story');if(!s)return;const id=s.dataset.id,b=e.target.closest('[data-a]');
+  if(!b){if(e.target.closest('.nb,.acts')||getSelection().toString())return;openIds.has(id)?openIds.delete(id):openIds.add(id);s.classList.toggle('open');return}
   const t=load(K.t,[]).find(x=>x.id===id);if(!t)return;const a=b.dataset.a;
-  if(a==='tg'){openIds.has(id)?openIds.delete(id):openIds.add(id);s.classList.toggle('open');return}
   if(a==='cp'){navigator.clipboard?.writeText(t.text).then(()=>toast('Copied'));return}
   if(a==='note'){noteId=id;render();return}
   if(a==='nx'){noteId=null;render();return}
