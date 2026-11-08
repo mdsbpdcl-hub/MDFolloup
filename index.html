@@ -52,6 +52,9 @@ textarea:focus,input:focus,select:focus{border-color:var(--ac);box-shadow:0 0 0 
 .opt{margin-top:16px;padding-top:12px;border-top:1px dashed var(--fb)}
 .hide{display:none!important}
 .mt8{margin-top:8px}
+.sugg{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.sugg:empty{display:none}
+.sg{min-height:34px;padding:5px 11px;border:1px dashed var(--fb);background:var(--pg);border-radius:99px;font-size:13px;color:var(--mu);cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg:active{background:var(--act)}
 .pop{animation:pop .15s ease-out}@keyframes pop{from{opacity:0;transform:translateY(-4px)}to{opacity:1}}
 .btn{display:block;width:100%;min-height:48px;border:0;border-radius:10px;background:var(--ac);color:#fff;font-weight:700;font-size:16px;cursor:pointer;margin-top:14px}
 .btn:active{background:var(--ac2)}
@@ -133,13 +136,13 @@ footer{text-align:center;color:var(--fa);font-size:12px;padding:10px 0 24px}
       <div class="chips" data-g="org">
         <button class="chip" data-v="SBPDCL">SBPDCL</button><button class="chip" data-v="NBPDCL">NBPDCL</button><button class="chip on" data-v="Energy">Energy Dept</button><button class="chip" data-v="BSRDCL">BSRDCL</button><button class="chip" data-v="RCD">RCD</button><button class="chip" data-v="Other">Other</button>
       </div>
-      <input type="text" id="orgO" class="mt8 hide pop" placeholder="Which office?" autocomplete="off"></div>
+      <input type="text" id="orgO" class="mt8 hide pop" placeholder="Which office?" autocomplete="off" list="dl-orgO"><datalist id="dl-orgO"></datalist><div class="sugg" id="sg-orgO"></div></div>
 
     <div class="grp"><div class="l">From</div>
       <div class="chips" data-g="from">
         <button class="chip on" data-v="CMD">CMD</button><button class="chip" data-v="RCD Secretary">RCD Secretary</button><button class="chip" data-v="Chief Secretary">Chief Secretary</button><button class="chip" data-v="Other officer">Other officer</button><button class="chip" data-v="Subordinate">Subordinate</button><button class="chip" data-v="Public">Public</button><button class="chip" data-v="Self">Self</button>
       </div>
-      <input type="text" id="fromN" class="mt8 hide pop" placeholder="Name of officer" autocomplete="off"></div>
+      <input type="text" id="fromN" class="mt8 hide pop" placeholder="Name of officer" autocomplete="off" list="dl-fromN"><datalist id="dl-fromN"></datalist><div class="sugg" id="sg-fromN"></div></div>
 
     <div class="grp"><div class="l">Follow up by</div>
       <div class="chips" data-g="due" data-keep="1">
@@ -154,7 +157,7 @@ footer{text-align:center;color:var(--fa);font-size:12px;padding:10px 0 24px}
           <button class="chip" data-v="Call">Call</button><button class="chip" data-v="Meeting">Meeting</button><button class="chip on" data-v="WhatsApp">WhatsApp</button><button class="chip" data-v="Email">Email</button><button class="chip" data-v="Letter">Letter</button><button class="chip" data-v="In person">In person</button>
         </div></div>
       <div class="grp"><div class="l">Name or note</div>
-        <input type="text" id="nm" placeholder="e.g. GM Patna Circle, file no., phone"></div>
+        <input type="text" id="nm" placeholder="e.g. GM Patna Circle, file no., phone" autocomplete="off" list="dl-nm"><datalist id="dl-nm"></datalist><div class="sugg" id="sg-nm"></div></div>
     </div>
 
     <button class="btn" id="saveBtn">Save</button>
@@ -237,11 +240,14 @@ $$('.chips').forEach(g=>g.addEventListener('click',e=>{const c=e.target.closest(
   if(!on||g.dataset.keep)c.classList.add('on');
   if(g.dataset.g==='due'){const p=c.dataset.v==='pick';$('#dueDate').classList.toggle('hide',!p);
     if(p){if(!$('#dueDate').value)$('#dueDate').value=addDays('',3);$('#dueDate').focus()}}
+  if(g.dataset.g==='from')$('#fromN').value='';
+  if(g.dataset.g==='org'&&pick('org')!=='Other')$('#orgO').value='';
   const shown=pops();if(c.classList.contains('on')&&shown[g.dataset.g])shown[g.dataset.g].focus();
   saveDraft()}));
 const NAMED={'Other officer':'Name of officer','Subordinate':'Name of subordinate','Public':'Name of person'};
 function pops(){const o=$('#orgO'),f=$('#fromN'),fv=pick('from');
   o.classList.toggle('hide',pick('org')!=='Other');f.classList.toggle('hide',!NAMED[fv]);if(NAMED[fv])f.placeholder=NAMED[fv]+' (optional)';
+  refreshSugg();
   return {org:o.classList.contains('hide')?null:o,from:f.classList.contains('hide')?null:f}}
 // Default choices, set again after every save
 const DEF={org:'Energy',from:'CMD',src:'WhatsApp',urg:''};
@@ -257,7 +263,26 @@ $('#pasteBtn').onclick=async()=>{if(!await doPaste()){txt.focus();toast('Long-pr
 $('#pasteSave').onclick=async()=>{const ok=await doPaste();if(!ok&&!txt.value.trim()){txt.focus();toast('Nothing copied. Long-press in the box to paste.');return}addTask()};
 txt.addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData)?.getData('text');if(t)setTimeout(()=>sniff(t),0)});
 txt.addEventListener('input',()=>{txt.classList.remove('bad');saveDraft()});
-$('#nm').addEventListener('input',saveDraft);$('#orgO').addEventListener('input',saveDraft);$('#fromN').addEventListener('input',saveDraft);
+// Name suggestions from earlier tasks (newest first): tap a chip or pick while typing
+const STD=['SBPDCL','NBPDCL','Energy','BSRDCL','RCD','Other'];
+function pastNames(id){const seen=new Map();
+  const list=[...tasks].sort((a,b)=>(b.created||'').localeCompare(a.created||''));
+  const cat=pick('from');
+  list.forEach(t=>{let v='';
+    if(id==='nm')v=t.name;
+    else if(id==='orgO')v=STD.includes(t.org)?'':t.org;
+    else if(id==='fromN'){const pre=cat+' – ';if((t.from||'').startsWith(pre))v=t.from.slice(pre.length)}
+    v=(v||'').trim();if(v&&!seen.has(v.toLowerCase()))seen.set(v.toLowerCase(),v)});
+  return [...seen.values()]}
+function sugg(id){const inp=$('#'+id),box=$('#sg-'+id),dl=$('#dl-'+id);if(!box)return;
+  const all=pastNames(id);dl.innerHTML=all.slice(0,60).map(v=>`<option value="${esc(v)}">`).join('');
+  if(inp.classList.contains('hide')){box.innerHTML='';return}
+  const q=inp.value.trim().toLowerCase();
+  const show=all.filter(v=>v.toLowerCase()!==q&&(!q||v.toLowerCase().includes(q))).slice(0,6);
+  box.innerHTML=show.map(v=>`<button type="button" class="sg" data-v="${esc(v)}">${esc(v)}</button>`).join('')}
+['nm','orgO','fromN'].forEach(id=>{$('#'+id).addEventListener('input',()=>{saveDraft();sugg(id)});
+  $('#sg-'+id).addEventListener('click',e=>{const b=e.target.closest('.sg');if(!b)return;$('#'+id).value=b.dataset.v;saveDraft();sugg(id)})});
+function refreshSugg(){['nm','orgO','fromN'].forEach(sugg)}
 // WhatsApp copied message: "[08/11, 6:54 am] Name: text"
 function sniff(t){const m=t.match(/^\s*\[\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?,?\s*\d{1,2}:\d{2}[^\]]*\]\s*([^:\n]{1,40}):/);
   if(m){if(!pick('src'))setPick('src','WhatsApp');if(!$('#nm').value)$('#nm').value=m[1].trim()}}
@@ -283,7 +308,7 @@ function addTask(){
   // reset
   txt.value='';$('#nm').value='';$('#orgO').value='';$('#fromN').value='';Object.keys(DEF).forEach(g=>setPick(g,DEF[g]));setPick('due','1');$('#dueDate').classList.add('hide');pops();
   localStorage.removeItem(K.d);
-  toast('Saved · follow up <b>'+dueLabel(due)+'</b>');counts();txt.focus();sync();
+  toast('Saved · follow up <b>'+dueLabel(due)+'</b>');counts();refreshSugg();txt.focus();sync();
 }
 $('#saveBtn').onclick=addTask;
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&!$('#v-add').classList.contains('hide')){e.preventDefault();addTask()}});
@@ -299,8 +324,7 @@ const CHECK='<i><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stro
 const when=iso=>{const d=new Date(iso);return isNaN(d)?'':d.toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})};
 function renderList(){counts();const td=today(),q=$('#q').value.trim().toLowerCase(),fo=$('#fo').value;
   let a=tasks.filter(t=>filt==='done'?!isOpen(t):isOpen(t)&&(filt==='open'||(filt==='due'?t.due<=td:t.due>td)));
-  const STD=['SBPDCL','NBPDCL','Energy','BSRDCL','RCD'];
-  if(fo)a=a.filter(t=>fo==='Other'?t.org&&!STD.includes(t.org):t.org===fo);
+  if(fo)a=a.filter(t=>fo==='Other'?t.org&&(t.org==='Other'||!STD.includes(t.org)):t.org===fo);
   if(q)a=a.filter(t=>[t.text,t.org,t.from,t.name,t.source,t.remarks].join(' ').toLowerCase().includes(q));
   if(filt==='done')a.sort((x,y)=>(y.doneOn||'').localeCompare(x.doneOn||'')||y.updated.localeCompare(x.updated));
   else a.sort((x,y)=>x.due.localeCompare(y.due)||(y.urgent?1:0)-(x.urgent?1:0)||y.created.localeCompare(x.created));
@@ -365,7 +389,7 @@ async function pull(){if(!cfg.u)return;const t0=Date.now()-5000;
     // keep older done items that the server no longer sends
     tasks.forEach(t=>{if(!byId.has(t.id)&&!isOpen(t))byId.set(t.id,t)});
     tasks=[...byId.values()].sort((a,b)=>b.created.localeCompare(a.created));store(K.t,tasks);
-    counts();if(!$('#v-list').classList.contains('hide'))renderList();
+    counts();refreshSugg();if(!$('#v-list').classList.contains('hide'))renderList();
   }catch(e){}
 }
 window.addEventListener('online',()=>{tries=0;sync()});
@@ -380,6 +404,7 @@ $('#exp').onclick=()=>{const b=new Blob([JSON.stringify(tasks,null,1)],{type:'ap
   a.href=URL.createObjectURL(b);a.download='followups-'+today()+'.json';a.click()};
 
 // start
+refreshSugg();
 counts();badge();txt.focus();
 setTimeout(()=>{sync();pull()},50);
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js');
