@@ -1,5 +1,5 @@
 // Opens instantly from cache, refreshes the cache in the background.
-const C = 'fu-v5';
+const C = 'fu-v6';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => {

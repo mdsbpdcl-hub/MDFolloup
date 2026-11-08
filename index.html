@@ -33,7 +33,12 @@ main{padding:12px 0 40px}
 .card{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:14px;margin-bottom:12px}
 label.l{display:block;font-weight:600;margin:0 0 6px}.req{color:var(--er)}
 .trow{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.trow label{margin:0}
+.trow{flex-wrap:wrap;gap:8px}.trow label{margin:0}
+.tb{display:flex;align-items:center;gap:6px;margin-left:auto}
+.sb{min-height:38px;padding:6px 12px;border:1px solid var(--fb);background:#fff;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;white-space:nowrap}
+.sb.pri{background:var(--ac);border-color:var(--ac);color:#fff}.sb.pri:active{background:var(--ac2)}
+.chip.sm{min-height:38px;padding:6px 10px;font-size:13px}
+.chip.urg.on{background:var(--ert);border-color:var(--er);color:var(--er)}.chip.urg.on::before{content:""}
 .lnk{border:0;background:none;color:var(--ac2);font-weight:600;cursor:pointer;padding:6px 4px;min-height:36px}
 textarea,input[type=text],input[type=date],input[type=url],input[type=search],select{width:100%;font-size:16px;min-height:42px;border:1px solid var(--fb);border-radius:8px;padding:9px 11px;background:#fff;outline:0}
 textarea{min-height:130px;resize:vertical;line-height:1.45}
@@ -117,7 +122,11 @@ footer{text-align:center;color:var(--fa);font-size:12px;padding:10px 0 24px}
 <section id="v-add">
   <div class="card">
     <div class="trow"><label class="l" for="txt">Task or message <span class="req">*</span></label>
-      <button class="lnk" id="pasteBtn" type="button">Paste</button></div>
+      <div class="tb">
+        <div class="chips" data-g="urg"><button class="chip sm urg" data-v="Yes" type="button">! Urgent</button></div>
+        <button class="sb" id="pasteBtn" type="button">Paste</button>
+        <button class="sb pri" id="pasteSave" type="button">Paste &amp; Save</button>
+      </div></div>
     <textarea id="txt" placeholder="Paste the WhatsApp message or type the instruction…"></textarea>
 
     <div class="grp"><div class="l">Office</div>
@@ -146,7 +155,6 @@ footer{text-align:center;color:var(--fa);font-size:12px;padding:10px 0 24px}
         </div></div>
       <div class="grp"><div class="l">Name or note</div>
         <input type="text" id="nm" placeholder="e.g. GM Patna Circle, file no., phone"></div>
-      <div class="grp"><div class="chips" data-g="urg"><button class="chip" data-v="Yes">Urgent</button></div></div>
     </div>
 
     <button class="btn" id="saveBtn">Save</button>
@@ -158,9 +166,8 @@ footer{text-align:center;color:var(--fa);font-size:12px;padding:10px 0 24px}
 <!-- LIST -->
 <section id="v-list" class="hide">
   <div class="seg" id="seg">
-    <button class="chip on" data-f="due">Due now<span class="c" id="c-due"></span></button>
+    <button class="chip on" data-f="open">All open<span class="c" id="c-open"></span></button>
     <button class="chip" data-f="up">Upcoming<span class="c" id="c-up"></span></button>
-    <button class="chip" data-f="open">All open<span class="c" id="c-open"></span></button>
     <button class="chip" data-f="done">Done<span class="c" id="c-done"></span></button>
   </div>
   <div class="frow">
@@ -192,7 +199,7 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const K={t:'fu.tasks',q:'fu.queue',c:'fu.cfg',d:'fu.draft'};
 const load=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
 const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-let tasks=load(K.t,[]), queue=load(K.q,[]), cfg=load(K.c,{}), filt='due', syncing=false, retryT=null, tries=0;
+let tasks=load(K.t,[]), queue=load(K.q,[]), cfg=load(K.c,{}), filt='open', syncing=false, retryT=null, tries=0;
 
 // one-time link setup: index.html#u=<server>&k=<key>
 if(location.hash.length>3){const p=new URLSearchParams(location.hash.slice(1));
@@ -243,8 +250,11 @@ const setPick=(g,v)=>$$(`.chips[data-g="${g}"] .chip`).forEach(c=>c.classList.to
 
 // paste helpers
 const txt=$('#txt');
-if(navigator.clipboard&&navigator.clipboard.readText){$('#pasteBtn').onclick=async()=>{try{const t=await navigator.clipboard.readText();if(t){txt.value=(txt.value?txt.value+'\n':'')+t;sniff(t);saveDraft()}}catch(e){txt.focus()}}}
-else $('#pasteBtn').classList.add('hide');
+async function doPaste(){if(!navigator.clipboard||!navigator.clipboard.readText)return false;
+  try{const t=(await navigator.clipboard.readText()||'').trim();if(!t)return false;txt.value=(txt.value.trim()?txt.value+'\n':'')+t;sniff(t);saveDraft();return true}catch(e){return false}}
+$('#pasteBtn').onclick=async()=>{if(!await doPaste()){txt.focus();toast('Long-press in the box and choose Paste')}};
+// Paste & Save: paste from clipboard, then save at once (same as the Save button)
+$('#pasteSave').onclick=async()=>{const ok=await doPaste();if(!ok&&!txt.value.trim()){txt.focus();toast('Nothing copied. Long-press in the box to paste.');return}addTask()};
 txt.addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData)?.getData('text');if(t)setTimeout(()=>sniff(t),0)});
 txt.addEventListener('input',()=>{txt.classList.remove('bad');saveDraft()});
 $('#nm').addEventListener('input',saveDraft);$('#orgO').addEventListener('input',saveDraft);$('#fromN').addEventListener('input',saveDraft);
@@ -282,7 +292,7 @@ document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Ente
 const isOpen=t=>t.status!=='Done';
 function counts(){const td=today();let due=0,up=0,open=0,done=0;
   tasks.forEach(t=>{if(isOpen(t)){open++;if(t.due<=td)due++;else up++}else done++});
-  $('#c-due').textContent=due;$('#c-up').textContent=up;$('#c-open').textContent=open;$('#c-done').textContent=done;
+  $('#c-up').textContent=up;$('#c-open').textContent=open;$('#c-done').textContent=done;
   $('#dueN').textContent=due||'';return due}
 const openIds=new Set();
 const CHECK='<i><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></i>';
