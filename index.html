@@ -122,13 +122,13 @@ footer{text-align:center;color:var(--fa);font-size:12px;padding:10px 0 24px}
 
     <div class="grp"><div class="l">Office</div>
       <div class="chips" data-g="org">
-        <button class="chip" data-v="SBPDCL">SBPDCL</button><button class="chip" data-v="NBPDCL">NBPDCL</button><button class="chip" data-v="Energy">Energy Dept</button><button class="chip" data-v="BSRDCL">BSRDCL</button><button class="chip" data-v="RCD">RCD</button><button class="chip" data-v="Other">Other</button>
+        <button class="chip" data-v="SBPDCL">SBPDCL</button><button class="chip" data-v="NBPDCL">NBPDCL</button><button class="chip on" data-v="Energy">Energy Dept</button><button class="chip" data-v="BSRDCL">BSRDCL</button><button class="chip" data-v="RCD">RCD</button><button class="chip" data-v="Other">Other</button>
       </div>
       <input type="text" id="orgO" class="mt8 hide pop" placeholder="Which office?" autocomplete="off"></div>
 
     <div class="grp"><div class="l">From</div>
       <div class="chips" data-g="from">
-        <button class="chip" data-v="CMD">CMD</button><button class="chip" data-v="RCD Secretary">RCD Secretary</button><button class="chip" data-v="Chief Secretary">Chief Secretary</button><button class="chip" data-v="Other officer">Other officer</button><button class="chip" data-v="Subordinate">Subordinate</button><button class="chip" data-v="Public">Public</button><button class="chip" data-v="Self">Self</button>
+        <button class="chip on" data-v="CMD">CMD</button><button class="chip" data-v="RCD Secretary">RCD Secretary</button><button class="chip" data-v="Chief Secretary">Chief Secretary</button><button class="chip" data-v="Other officer">Other officer</button><button class="chip" data-v="Subordinate">Subordinate</button><button class="chip" data-v="Public">Public</button><button class="chip" data-v="Self">Self</button>
       </div>
       <input type="text" id="fromN" class="mt8 hide pop" placeholder="Name of officer" autocomplete="off"></div>
 
@@ -142,7 +142,7 @@ footer{text-align:center;color:var(--fa);font-size:12px;padding:10px 0 24px}
       <div class="small" style="margin-bottom:10px">Optional</div>
       <div class="grp" style="margin-top:0"><div class="l">Came by</div>
         <div class="chips" data-g="src">
-          <button class="chip" data-v="Call">Call</button><button class="chip" data-v="Meeting">Meeting</button><button class="chip" data-v="WhatsApp">WhatsApp</button><button class="chip" data-v="Email">Email</button><button class="chip" data-v="Letter">Letter</button><button class="chip" data-v="In person">In person</button>
+          <button class="chip" data-v="Call">Call</button><button class="chip" data-v="Meeting">Meeting</button><button class="chip on" data-v="WhatsApp">WhatsApp</button><button class="chip" data-v="Email">Email</button><button class="chip" data-v="Letter">Letter</button><button class="chip" data-v="In person">In person</button>
         </div></div>
       <div class="grp"><div class="l">Name or note</div>
         <input type="text" id="nm" placeholder="e.g. GM Patna Circle, file no., phone"></div>
@@ -236,6 +236,8 @@ const NAMED={'Other officer':'Name of officer','Subordinate':'Name of subordinat
 function pops(){const o=$('#orgO'),f=$('#fromN'),fv=pick('from');
   o.classList.toggle('hide',pick('org')!=='Other');f.classList.toggle('hide',!NAMED[fv]);if(NAMED[fv])f.placeholder=NAMED[fv]+' (optional)';
   return {org:o.classList.contains('hide')?null:o,from:f.classList.contains('hide')?null:f}}
+// Default choices, set again after every save
+const DEF={org:'Energy',from:'CMD',src:'WhatsApp',urg:''};
 const pick=g=>{const c=document.querySelector(`.chips[data-g="${g}"] .chip.on`);return c?c.dataset.v:''};
 const setPick=(g,v)=>$$(`.chips[data-g="${g}"] .chip`).forEach(c=>c.classList.toggle('on',c.dataset.v===v));
 
@@ -269,7 +271,7 @@ function addTask(){
     name:$('#nm').value.trim(),source:pick('src'),due,urgent:pick('urg')?'Yes':'',status:'Open',doneOn:'',updated:now,remarks:''};
   tasks.unshift(task);queue.push({op:'add',t:task});store(K.t,tasks);store(K.q,queue);
   // reset
-  txt.value='';$('#nm').value='';$('#orgO').value='';$('#fromN').value='';['org','from','src','urg'].forEach(g=>setPick(g,''));setPick('due','1');$('#dueDate').classList.add('hide');pops();
+  txt.value='';$('#nm').value='';$('#orgO').value='';$('#fromN').value='';Object.keys(DEF).forEach(g=>setPick(g,DEF[g]));setPick('due','1');$('#dueDate').classList.add('hide');pops();
   localStorage.removeItem(K.d);
   toast('Saved · follow up <b>'+dueLabel(due)+'</b>');counts();txt.focus();sync();
 }
