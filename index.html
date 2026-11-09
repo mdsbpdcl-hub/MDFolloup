@@ -139,7 +139,7 @@ footer{text-align:center;color:var(--fa);font-size:12px;padding:10px 0 24px}
 <!-- ADD -->
 <section id="v-add">
   <div class="allow hide" id="allow">
-    <p><b>Save copied messages automatically?</b><br>Copy a message in WhatsApp, open this app, and it is saved at once. Your phone will ask once for permission.</p>
+    <p><b>Save copied messages automatically?</b><br>Copy a message in WhatsApp and come back to this app within a minute, and it is saved at once. Your phone will ask once for permission.</p>
     <div class="row"><button class="pri" id="allowYes" type="button">Allow</button><button id="allowNo" type="button">Not now</button></div>
   </div>
   <div class="card">
@@ -208,7 +208,7 @@ footer{text-align:center;color:var(--fa);font-size:12px;padding:10px 0 24px}
     <input type="text" id="sk" placeholder="Key shown during setup" autocomplete="off">
     <button class="btn" id="setSave">Save and sync</button>
     <p class="small" style="margin-top:14px">Your entries are kept on this device and copied to the server whenever you are online. Open the same link on another device to see the same list.</p>
-    <label class="small" style="display:flex;gap:8px;align-items:center;margin:12px 0;color:var(--ink);font-size:14px"><input type="checkbox" id="autoc" style="width:20px;height:20px;accent-color:var(--ac)"> Save the copied message automatically when I open the app</label>
+    <label class="small" style="display:flex;gap:8px;align-items:center;margin:12px 0;color:var(--ink);font-size:14px"><input type="checkbox" id="autoc" style="width:20px;height:20px;accent-color:var(--ac)"> Save the copied message automatically when I come back to the app within 1 minute</label>
     <label class="small" style="display:flex;gap:8px;align-items:center;margin:12px 0;color:var(--ink);font-size:14px"><input type="checkbox" id="inst" style="width:20px;height:20px;accent-color:var(--ac)"> Save messages shared from WhatsApp at once (with the selected defaults)</label>
     <div class="acts"><a class="ab" href="bulletin.html" style="text-decoration:none;display:inline-flex;align-items:center">Open desktop bulletin</a><button class="ab" id="exp">Download backup (JSON)</button><button class="ab" id="back">Back</button></div>
   </div>
@@ -395,7 +395,7 @@ $('#list').onclick=e=>{const it=e.target.closest('.item');if(!it)return;const t=
   if(e.target.closest('input,textarea'))return;
   const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
   if(a==='exp'){openIds.has(t.id)?openIds.delete(t.id):openIds.add(t.id);it.classList.toggle('ex');return}
-  if(a==='cp'){navigator.clipboard?.writeText(waText(t)).then(()=>toast('Copied for WhatsApp'));return}
+  if(a==='cp'){const w=waText(t);markClip(w);navigator.clipboard?.writeText(w).then(()=>toast('Copied for WhatsApp'));return}
   if(a==='tog'){const prev={status:t.status,doneOn:t.doneOn,due:t.due};
     const undo=()=>{change(t,{...prev},'Restored');renderList()};
     if(isOpen(t)){it.classList.add('leaving');change(t,{status:'Done',doneOn:today()},'Marked done',undo)}
@@ -519,9 +519,20 @@ async function checkClip(byTap){
     const h=clipHash(t),last=getLS('fu.lastclip','');if(h===last)return;
     setLS('fu.lastclip',h);
     if(!last&&!byTap)return;                                          // first check ever: only remember it
-    if(tasks.some(x=>(x.text||'').trim()===t))return;                 // already saved earlier
-    $('#allow').classList.add('hide');captureShared(t);
+    // already saved, or our own "Copy for WhatsApp" text (task + Ref + note)
+    if(tasks.some(x=>{const s=(x.text||'').trim();return s&&(s===t||(s.length>=10&&t.startsWith(s)))}))return;
+    $('#allow').classList.add('hide');
+    // Out of the app for more than a minute? The copy may be old: leave it for you to paste yourself.
+    const away=Date.now()-(+getLS('fu.lastseen','0')||0);
+    if(!byTap&&away>AWAY_MS)return;
+    captureShared(t);
   }catch(e){}finally{clipBusy=false}}
+const AWAY_MS=60*1000;   // 1 minute
+// remember when the app was last in use (time away decides: save at once, or ask)
+const seen=()=>setLS('fu.lastseen',String(Date.now()));
+document.addEventListener('visibilitychange',()=>{if(document.hidden)seen()});
+window.addEventListener('pagehide',seen);
+setInterval(()=>{if(!document.hidden)seen()},60000);
 $('#allowYes').onclick=()=>{$('#allow').classList.add('hide');checkClip(true)};
 $('#allowNo').onclick=()=>{$('#allow').classList.add('hide');setLS('fu.allowno','1')};
 let clipT;const clipSoon=()=>{clearTimeout(clipT);clipT=setTimeout(()=>{if(!document.hidden)checkClip(false)},350)};
