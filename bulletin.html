@@ -59,12 +59,13 @@ h2.energy{border-top-color:var(--en)}h2.other{border-top-color:var(--ot)}
 <script>
 (()=>{
 /* Paste the dashboard web-app link here (ends in /exec) — or open this page once with #src=<link> */
-const SOURCE_URL='';
+const SOURCE_URL='https://script.google.com/macros/s/AKfycbzLgIDohl8fJWG8Dz8xbzeY4-ivr2usUEJNEGbsOaqJxakjnGOYhLdIQjnIoJNxmmThtg/exec';
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ls={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
 let src=SOURCE_URL||ls.get('pid.src','');
+if(SOURCE_URL&&ls.get('pid.src','')!==SOURCE_URL){ls.set('pid.src',SOURCE_URL);try{localStorage.removeItem('pid.cache')}catch(e){}}
 if(location.hash.includes('src=')){const v=new URLSearchParams(location.hash.slice(1)).get('src');if(v){src=v;ls.set('pid.src',v)}history.replaceState(null,'',location.pathname)}
 let DATA=null,fromCache=false,dep='',pri='',query='',lastShown=[],tt;
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2200)};
