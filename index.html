@@ -208,6 +208,7 @@ footer{text-align:center;color:var(--fa);font-size:12px;padding:10px 0 24px}
     <p class="small" style="margin-top:14px">Your entries are kept on this device and copied to the server whenever you are online. Open the same link on another device to see the same list.</p>
     
     <label class="small" style="display:flex;gap:8px;align-items:center;margin:12px 0;color:var(--ink);font-size:14px"><input type="checkbox" id="inst" style="width:20px;height:20px;accent-color:var(--ac)"> Save messages shared from WhatsApp at once (with the selected defaults)</label>
+    <div id="failedBox" class="hide" style="background:var(--wat);color:var(--wa);border-radius:10px;padding:10px 12px;margin:12px 0"></div>
     <div class="acts"><a class="ab" href="bulletin.html" style="text-decoration:none;display:inline-flex;align-items:center">Open desktop bulletin</a><button class="ab" id="exp">Download backup (JSON)</button><button class="ab" id="back">Back</button></div>
   </div>
 </section>
@@ -254,7 +255,7 @@ $('#toast').addEventListener('click',e=>{if(e.target.id==='undo'&&undoFn){const 
 const show=v=>{['add','list','set'].forEach(x=>$('#v-'+x).classList.toggle('hide',x!==v));
   $$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   if(v==='list')renderList(); if(v==='add')setTimeout(()=>$('#txt').focus(),30);
-  if(v==='set'){$('#su').value=cfg.u||'';$('#sk').value=cfg.k||''}
+  if(v==='set'){$('#su').value=cfg.u||'';$('#sk').value=cfg.k||'';failedUi()}
   window.scrollTo(0,0)};
 $$('.tab').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $('#gear').onclick=()=>show('set');$('#back').onclick=()=>show('add');
@@ -414,18 +415,49 @@ $('#list').onclick=e=>{const it=e.target.closest('.item');if(!it)return;const t=
 function badge(state){const s=$('#sync');s.className='sync';
   if(!cfg.u){s.classList.add('off');s.textContent='Not linked';return}
   if(queue.length){s.classList.add('wait');s.textContent=(state==='busy'?'Saving… ':'')+queue.length+' waiting';return}
+  const nf=load('fu.failed',[]).length;if(nf){s.classList.add('wait');s.textContent='⚠ '+nf+' not saved';return}
   s.textContent='✓ Synced'}
-$('#sync').onclick=()=>{if(!cfg.u){show('set');return}tries=0;sync();pull()};
+// tap the badge: say why, then try again
+$('#sync').onclick=()=>{if(!cfg.u){show('set');return}
+  const nf=load('fu.failed',[]).length;
+  if(queue.length)toast(lastErr?esc(lastErr):'Saving now…');else if(nf){show('set');toast(nf+' change(s) were set aside. See below.')}else toast('All saved');
+  tries=0;sync();pull()};
+function failedUi(){const box=$('#failedBox');if(!box)return;const f=load('fu.failed',[]);
+  if(!f.length){box.classList.add('hide');box.innerHTML='';return}
+  box.classList.remove('hide');
+  box.innerHTML=`<b>${f.length} change${f.length>1?'s':''} could not be saved</b><br><span class="small">${esc(f[f.length-1].why||'')}</span>
+    <ul style="margin:6px 0 8px;padding-left:18px">${f.slice(-5).map(o=>`<li>${esc(o.op==='add'?'New task: '+((o.t&&o.t.text)||'').slice(0,60):'Change to a task: '+Object.keys(o.f||{}).filter(k=>k!=='updated').join(', '))}</li>`).join('')}</ul>
+    <div class="acts"><button class="ab" id="failRetry">Try again</button></div>`;
+  $('#failRetry').onclick=()=>{const q=load(K.q,[]);store(K.q,q.concat(load('fu.failed',[]).map(o=>{const c=Object.assign({},o);delete c.why;delete c.at;return c})));
+    store('fu.failed',[]);queue=load(K.q,[]);srvFails=0;tries=0;failedUi();badge();toast('Trying again…');sync()}}
 
-async function sync(){badge();if(!cfg.u||syncing||!queue.length)return;
+// Saving to the sheet. A change the server keeps refusing is set aside (kept on the phone, see ⚙)
+// so it cannot hold up everything behind it.
+let lastErr='',srvFails=0;
+async function sync(){queue=load(K.q,queue);badge();if(!cfg.u||syncing||!queue.length)return;
   if(Date.now()<hold){clearTimeout(retryT);retryT=setTimeout(sync,hold-Date.now()+50);return}   // keep Undo possible for a few seconds
-  syncing=true;badge('busy');const batch=queue.slice(0,50);
-  try{const r=await fetch(cfg.u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:cfg.k,ops:batch})});
-    const j=await r.json();if(!j.ok)throw new Error(j.error||'server');
-    const sent=new Set(batch.map(o=>o.qid));queue=load(K.q,queue).filter(o=>!sent.has(o.qid));store(K.q,queue);tries=0;syncing=false;badge();if(queue.length)sync();
-  }catch(e){syncing=false;badge();
-    if(String(e.message)==='key'){toast('The key is not right. Please check settings.');return}
-    clearTimeout(retryT);retryT=setTimeout(sync,[4e3,15e3,60e3][Math.min(tries++,2)]);}
+  syncing=true;badge('busy');const batch=srvFails>=2?queue.slice(0,1):queue.slice(0,50);   // after repeated refusals, try one at a time
+  try{let r;try{r=await fetch(cfg.u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:cfg.k,ops:batch})})}
+      catch(x){throw new Error('net')}
+    const txt=await r.text();let j;
+    try{j=JSON.parse(txt)}catch(x){
+      if(/sign in|accounts\.google/i.test(txt))throw new Error('signin');
+      const body=txt.replace(/<title>[\s\S]*?<\/title>/i,'').replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>/gi,'').replace(/<[^>]+>/g,' ').replace(/&quot;/g,'"').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
+      const m=body.match(/[A-Za-z]*Error[^.]*\.?(\s*\(line[^)]*\))?/);
+      throw new Error('srv:'+((m&&m[0])||body.slice(0,140)||('server answered '+r.status)))}
+    if(!j.ok)throw new Error(j.error==='key'?'key':j.error==='busy'?'busy':'srv:'+(j.error||'not saved'));
+    const sent=new Set(batch.map(o=>o.qid));queue=load(K.q,queue).filter(o=>!sent.has(o.qid));store(K.q,queue);
+    tries=0;srvFails=0;lastErr='';syncing=false;badge();if(queue.length)sync();
+  }catch(e){syncing=false;const m=String(e.message||e);
+    if(m==='key'){lastErr='The key is not right. Paste the setup link again in ⚙.';badge();toast(lastErr);return}
+    if(m==='signin'){lastErr='The server asks for a Google sign-in. Set the web app to "Who has access: Anyone" and deploy a new version.';badge();return}
+    if(m==='net'){lastErr='No internet, or the server did not answer. Will keep trying.'}
+    else if(m==='busy'){lastErr='The sheet was busy. Trying again.'}
+    else{srvFails++;lastErr='The server could not save: '+m.slice(4);
+      if(srvFails>=4&&batch.length===1){const bad=batch[0];queue=load(K.q,queue).filter(o=>o.qid!==bad.qid);store(K.q,queue);
+        const f=load('fu.failed',[]);f.push(Object.assign({},bad,{why:lastErr,at:new Date().toISOString()}));store('fu.failed',f);
+        srvFails=0;tries=0;failedUi();toast('One change could not be saved and was set aside (see ⚙).');badge();sync();return}}
+    badge();clearTimeout(retryT);retryT=setTimeout(sync,[4e3,15e3,60e3][Math.min(tries++,2)]);}
 }
 async function pull(){if(!cfg.u)return;const t0=Date.now()-5000;
   try{const r=await fetch(cfg.u+'?a=list&k='+encodeURIComponent(cfg.k));const j=await r.json();if(!j.ok)return;
