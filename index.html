@@ -35,6 +35,11 @@ label.l{display:block;font-weight:600;margin:0 0 6px}.req{color:var(--er)}
 .trow{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .trow{flex-wrap:wrap;gap:8px}.trow label{margin:0}
 .tb{display:flex;align-items:center;gap:6px;margin-left:auto}
+.tl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pv{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:5px 11px;border:1px solid var(--fb);border-radius:99px;background:#fff;cursor:pointer;font-size:14px;font-weight:600;color:var(--mu);user-select:none}
+.pv input{width:18px;height:18px;margin:0;accent-color:#3d4657}
+.pv:has(input:checked){background:#eef0f3;border-color:#3d4657;color:#1f2933}
+.tag.pr{display:inline-block;padding:0 7px;border-radius:99px;font-size:12px;background:#eef0f3;border:1px solid #c9ced6;color:#3d4657;font-weight:600}
 .sb{min-height:38px;padding:6px 12px;border:1px solid var(--fb);background:#fff;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;white-space:nowrap}
 .sb.pri{background:var(--ac);border-color:var(--ac);color:#fff}.sb.pri:active{background:var(--ac2)}
 .chip.sm{min-height:38px;padding:6px 10px;font-size:13px}
@@ -135,7 +140,7 @@ footer{text-align:center;color:var(--fa);font-size:12px;padding:10px 0 24px}
 <!-- ADD -->
 <section id="v-add">
   <div class="card">
-    <div class="trow"><label class="l" for="txt">Task or message <span class="req">*</span></label>
+    <div class="trow"><div class="tl"><label class="pv" title="Private tasks are marked in the sheet and kept out of shared lists"><input type="checkbox" id="priv" checked><span>🔒 Private</span></label><label class="l" for="txt">Task or message <span class="req">*</span></label></div>
       <div class="tb">
         <div class="chips" data-g="urg"><button class="chip sm urg" data-v="Yes" type="button">! Urgent</button></div>
         <button class="sb" id="pasteBtn" type="button">Paste</button>
@@ -312,8 +317,8 @@ function sniff(t){const m=t.match(/^\s*\[\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?,
   if(m){if(!pick('src'))setPick('src','WhatsApp');if(!$('#nm').value)$('#nm').value=m[1].trim()}}
 
 // draft kept on device
-function saveDraft(){store(K.d,{t:txt.value,org:pick('org'),from:pick('from'),src:pick('src'),nm:$('#nm').value,urg:pick('urg'),orgO:$('#orgO').value,fromN:$('#fromN').value})}
-function applyDraft(d){if(!d)return;txt.value=d.t||'';['org','from','src','urg'].forEach(g=>d[g]&&setPick(g,d[g]));$('#nm').value=d.nm||'';$('#orgO').value=d.orgO||'';$('#fromN').value=d.fromN||'';pops()}
+function saveDraft(){store(K.d,{t:txt.value,org:pick('org'),from:pick('from'),src:pick('src'),nm:$('#nm').value,urg:pick('urg'),orgO:$('#orgO').value,fromN:$('#fromN').value,priv:$('#priv').checked})}
+function applyDraft(d){if(!d)return;txt.value=d.t||'';['org','from','src','urg'].forEach(g=>d[g]&&setPick(g,d[g]));$('#nm').value=d.nm||'';$('#orgO').value=d.orgO||'';$('#fromN').value=d.fromN||'';$('#priv').checked=d.priv!==false;pops()}
 applyDraft(load(K.d,null));
 
 // save
@@ -328,10 +333,10 @@ function addTask(opts){
   if(org==='Other'&&oo)org=oo;if(NAMED[from]&&fn)from+=' – '+fn;
   const now=new Date().toISOString();
   const task={id:'T'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),created:now,text:t,org,from,
-    name:$('#nm').value.trim(),source:pick('src'),due,urgent:pick('urg')?'Yes':'',status:'Open',doneOn:'',updated:now,remarks:''};
+    name:$('#nm').value.trim(),source:pick('src'),due,urgent:pick('urg')?'Yes':'',status:'Open',doneOn:'',updated:now,remarks:'',private:$('#priv').checked?'Yes':''};
   tasks=load(K.t,tasks);tasks.unshift(task);queue=load(K.q,queue);queue.push({op:'add',t:task,qid:qid()});store(K.t,tasks);store(K.q,queue);
   // reset
-  txt.value='';$('#nm').value='';$('#orgO').value='';$('#fromN').value='';Object.keys(DEF).forEach(g=>setPick(g,DEF[g]));setPick('due','1');$('#dueDate').classList.add('hide');pops();
+  txt.value='';$('#nm').value='';$('#orgO').value='';$('#fromN').value='';$('#priv').checked=true;Object.keys(DEF).forEach(g=>setPick(g,DEF[g]));setPick('due','1');$('#dueDate').classList.add('hide');pops();
   localStorage.removeItem(K.d);
   counts();refreshSugg();
   if(opts&&opts.shared){showWho(task,due)}
@@ -375,10 +380,10 @@ function renderList(){counts();const td=today(),q=$('#q').value.trim().toLowerCa
                 :`<button class="ab" data-a="cp">Copy</button>`;
     return `<div class="item ${cls}" data-id="${esc(t.id)}">
       <div class="ih" data-a="exp"><button class="ck" data-a="tog" aria-label="${o?'Mark done':'Mark not done'}">${CHECK}</button>
-        <div class="ib"><div class="it">${t.urgent&&o?'<span class="tag u">Urgent</span> ':''}${esc(t.text)}</div><div class="sub">${sub}</div></div>
+        <div class="ib"><div class="it">${t.private?'<span class="tag pr">🔒 Private</span> ':''}${t.urgent&&o?'<span class="tag u">Urgent</span> ':''}${esc(t.text)}</div><div class="sub">${sub}</div></div>
         <div class="rt"><span class="due">${o?esc(dueLabel(t.due)):'Done'}</span><span class="chev">›</span></div></div>
       <div class="det"><dl class="dl">${dl}</dl>
-        <div class="note"><div class="small" style="margin:2px 0 4px">Issue</div><textarea data-x="1" style="min-height:90px">${esc(t.text)}</textarea><div class="small" style="margin:8px 0 4px">Note</div><textarea data-n="1" placeholder="Your note or instructions (goes into the WhatsApp message)">${esc(t.remarks)}</textarea><button class="ab" data-a="note">Save changes</button></div>
+        <div class="note"><div class="small" style="margin:2px 0 4px">Issue</div><textarea data-x="1" style="min-height:90px">${esc(t.text)}</textarea><label class="pv" style="margin:10px 0 2px"><input type="checkbox" data-pv="1"${t.private?' checked':''}><span>🔒 Private</span></label><div class="small" style="margin:8px 0 4px">Note</div><textarea data-n="1" placeholder="Your note or instructions (goes into the WhatsApp message)">${esc(t.remarks)}</textarea><button class="ab" data-a="note">Save changes</button></div>
         <div class="acts">${acts}</div></div></div>`}).join('');
 }
 function change(t,f,msg,undo){f.updated=new Date().toISOString();Object.assign(t,f);
@@ -398,7 +403,8 @@ $('#list').onclick=e=>{const it=e.target.closest('.item');if(!it)return;const t=
     setTimeout(renderList,450);return}
   if(a==='note'){const v=it.querySelector('[data-n]').value.trim(),x=it.querySelector('[data-x]').value.trim();
     if(!x){toast('The issue cannot be empty.');return}
-    const f={};if(x!==t.text)f.text=x;if(v!==(t.remarks||''))f.remarks=v;if(!Object.keys(f).length)return;change(t,f,'Saved');renderList();return}
+    const pv=it.querySelector('[data-pv]').checked?'Yes':'';
+    const f={};if(x!==t.text)f.text=x;if(v!==(t.remarks||''))f.remarks=v;if(pv!==(t.private||''))f.private=pv;if(!Object.keys(f).length)return;change(t,f,'Saved');renderList();return}
   if(a==='s1'||a==='s7'){const base=t.due>today()?t.due:today();change(t,{due:addDays(base,a==='s1'?1:7)},'Moved to <b>'+dueLabel(addDays(base,a==='s1'?1:7))+'</b>');renderList()}
 };
 
@@ -485,7 +491,7 @@ $('#wsX').onclick=closeWho;
 function captureShared(sh){
   const draft=load(K.d,null);let instant=true;try{instant=localStorage.getItem('fu.instant')!=='0'}catch(e){}
   // start from a clean form with the defaults, so a half-typed draft never mixes into the shared message
-  $('#nm').value='';$('#orgO').value='';$('#fromN').value='';Object.keys(DEF).forEach(g=>setPick(g,DEF[g]));setPick('due','1');$('#dueDate').classList.add('hide');pops();
+  $('#nm').value='';$('#orgO').value='';$('#fromN').value='';$('#priv').checked=true;Object.keys(DEF).forEach(g=>setPick(g,DEF[g]));setPick('due','1');$('#dueDate').classList.add('hide');pops();
   txt.value=sh;sniff(sh);
   if(instant){addTask({shared:true});if(draft&&(draft.t||'').trim()){applyDraft(draft);store(K.d,draft)}}
   else{saveDraft();show('add');toast('Message added. Check the options and tap Save.')}
