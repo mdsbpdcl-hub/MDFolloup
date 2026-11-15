@@ -263,6 +263,9 @@ $$('.chips[data-g]').forEach(g=>g.addEventListener('click',e=>{const c=e.target.
     if(p){if(!$('#dueDate').value)$('#dueDate').value=addDays('',3);$('#dueDate').focus()}}
   if(g.dataset.g==='from')$('#fromN').value='';
   if(g.dataset.g==='org'&&pick('org')!=='Other')$('#orgO').value='';
+  // From follows the office: RCD / BSRDCL → RCD Secretary, others → CMD (only if From is still one of these two defaults)
+  if(g.dataset.g==='org'){const o=pick('org'),f=pick('from');
+    if(!f||f==='CMD'||f==='RCD Secretary'){const want=(o==='RCD'||o==='BSRDCL')?'RCD Secretary':'CMD';if(f!==want){setPick('from',want);$('#fromN').value=''}}}
   const shown=pops();if(c.classList.contains('on')&&shown[g.dataset.g])shown[g.dataset.g].focus();
   saveDraft()}));
 const NAMED={'Other officer':'Name of officer','Subordinate':'Name of subordinate','Public':'Name of person'};
