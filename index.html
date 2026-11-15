@@ -39,6 +39,7 @@ label.l{display:block;font-weight:600;margin:0 0 6px}.req{color:var(--er)}
 .pv{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:5px 11px;border:1px solid var(--fb);border-radius:99px;background:#fff;cursor:pointer;font-size:14px;font-weight:600;color:var(--mu);user-select:none}
 .pv input{width:18px;height:18px;margin:0;accent-color:#3d4657}
 .pv:has(input:checked){background:#eef0f3;border-color:#3d4657;color:#1f2933}
+.ab.pvon{background:#eef0f3;border-color:#3d4657;color:#1f2933}
 .tag.pr{display:inline-block;padding:0 7px;border-radius:99px;font-size:12px;background:#eef0f3;border:1px solid #c9ced6;color:#3d4657;font-weight:600}
 .sb{min-height:38px;padding:6px 12px;border:1px solid var(--fb);background:#fff;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;white-space:nowrap}
 .sb.pri{background:var(--ac);border-color:var(--ac);color:#fff}.sb.pri:active{background:var(--ac2)}
@@ -376,14 +377,15 @@ function renderList(){counts();const td=today(),q=$('#q').value.trim().toLowerCa
     const dl=row('Office',esc(t.org))+row('From',esc(t.from))+row('Name / note',esc(t.name))+row('Came by',esc(t.source))+
       row('Added',esc(when(t.created)))+row('Follow up by',esc(fmt(t.due)))+row('Done on',t.doneOn?esc(fmt(t.doneOn)):'')+
       row('Priority',t.urgent?'<span class="tag u">Urgent</span>':'');
-    const acts=o?`<button class="ab" data-a="s1">+1 day</button><button class="ab" data-a="s7">+1 week</button><button class="ab" data-a="cp">Copy</button><a class="ab wa" href="${esc(waLink(t))}" target="_blank" rel="noopener">${WA_ICON}WhatsApp</a>`
-                :`<button class="ab" data-a="cp">Copy</button>`;
+    const pvb=`<button class="ab${t.private?' pvon':''}" data-a="pvt">${t.private?'🔓 Make not private':'🔒 Make private'}</button>`;
+    const acts=o?`${pvb}<button class="ab" data-a="s1">+1 day</button><button class="ab" data-a="s7">+1 week</button><button class="ab" data-a="cp">Copy</button><a class="ab wa" href="${esc(waLink(t))}" target="_blank" rel="noopener">${WA_ICON}WhatsApp</a>`
+                :`${pvb}<button class="ab" data-a="cp">Copy</button>`;
     return `<div class="item ${cls}" data-id="${esc(t.id)}">
       <div class="ih" data-a="exp"><button class="ck" data-a="tog" aria-label="${o?'Mark done':'Mark not done'}">${CHECK}</button>
         <div class="ib"><div class="it">${t.private?'<span class="tag pr">🔒 Private</span> ':''}${t.urgent&&o?'<span class="tag u">Urgent</span> ':''}${esc(t.text)}</div><div class="sub">${sub}</div></div>
         <div class="rt"><span class="due">${o?esc(dueLabel(t.due)):'Done'}</span><span class="chev">›</span></div></div>
       <div class="det"><dl class="dl">${dl}</dl>
-        <div class="note"><div class="small" style="margin:2px 0 4px">Issue</div><textarea data-x="1" style="min-height:90px">${esc(t.text)}</textarea><label class="pv" style="margin:10px 0 2px"><input type="checkbox" data-pv="1"${t.private?' checked':''}><span>🔒 Private</span></label><div class="small" style="margin:8px 0 4px">Note</div><textarea data-n="1" placeholder="Your note or instructions (goes into the WhatsApp message)">${esc(t.remarks)}</textarea><button class="ab" data-a="note">Save changes</button></div>
+        <div class="note"><div class="small" style="margin:2px 0 4px">Issue</div><textarea data-x="1" style="min-height:90px">${esc(t.text)}</textarea><div class="small" style="margin:8px 0 4px">Note</div><textarea data-n="1" placeholder="Your note or instructions (goes into the WhatsApp message)">${esc(t.remarks)}</textarea><button class="ab" data-a="note">Save changes</button></div>
         <div class="acts">${acts}</div></div></div>`}).join('');
 }
 function change(t,f,msg,undo){f.updated=new Date().toISOString();Object.assign(t,f);
@@ -395,6 +397,7 @@ $('#list').onclick=e=>{const it=e.target.closest('.item');if(!it)return;const t=
   if(e.target.closest('input,textarea'))return;
   const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
   if(a==='exp'){openIds.has(t.id)?openIds.delete(t.id):openIds.add(t.id);it.classList.toggle('ex');return}
+  if(a==='pvt'){const was=t.private||'';change(t,{private:was?'':'Yes'},was?'Marked not private':'Marked private',()=>{change(t,{private:was},'Restored');renderList()});renderList();return}
   if(a==='cp'){const w=waText(t);navigator.clipboard?.writeText(w).then(()=>toast('Copied for WhatsApp'));return}
   if(a==='tog'){const prev={status:t.status,doneOn:t.doneOn,due:t.due};
     const undo=()=>{change(t,{...prev},'Restored');renderList()};
@@ -403,8 +406,7 @@ $('#list').onclick=e=>{const it=e.target.closest('.item');if(!it)return;const t=
     setTimeout(renderList,450);return}
   if(a==='note'){const v=it.querySelector('[data-n]').value.trim(),x=it.querySelector('[data-x]').value.trim();
     if(!x){toast('The issue cannot be empty.');return}
-    const pv=it.querySelector('[data-pv]').checked?'Yes':'';
-    const f={};if(x!==t.text)f.text=x;if(v!==(t.remarks||''))f.remarks=v;if(pv!==(t.private||''))f.private=pv;if(!Object.keys(f).length)return;change(t,f,'Saved');renderList();return}
+    const f={};if(x!==t.text)f.text=x;if(v!==(t.remarks||''))f.remarks=v;if(!Object.keys(f).length)return;change(t,f,'Saved');renderList();return}
   if(a==='s1'||a==='s7'){const base=t.due>today()?t.due:today();change(t,{due:addDays(base,a==='s1'?1:7)},'Moved to <b>'+dueLabel(addDays(base,a==='s1'?1:7))+'</b>');renderList()}
 };
 
