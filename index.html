@@ -233,6 +233,7 @@ const qid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);   /
 let tasks=load(K.t,[]), queue=load(K.q,[]).map(o=>o.qid?o:{...o,qid:qid()}), cfg=load(K.c,{}), filt='open', hold=0, syncing=false, retryT=null, tries=0;
 
 // one-time link setup: index.html#u=<server>&k=<key>
+const openList=location.hash==='#list';   // link from Quick Follow-up: open the Follow-ups list
 if(location.hash.length>3){const p=new URLSearchParams(location.hash.slice(1));
   if(p.get('u')&&p.get('k')){cfg={u:p.get('u'),k:p.get('k')};store(K.c,cfg)}
   history.replaceState(null,'',location.pathname+location.search)}
@@ -291,7 +292,10 @@ async function doPaste(){if(!navigator.clipboard||!navigator.clipboard.readText)
   try{const t=(await navigator.clipboard.readText()||'').trim();if(!t)return false;txt.value=(txt.value.trim()?txt.value+'\n':'')+t;sniff(t);saveDraft();return true}catch(e){return false}}
 $('#pasteBtn').onclick=async()=>{if(!await doPaste()){txt.focus();toast('Long-press in the box and choose Paste')}};
 // Paste & Save: paste from clipboard, then save at once (same as the Save button)
-$('#pasteSave').onclick=async()=>{const ok=await doPaste();if(!ok&&!txt.value.trim()){txt.focus();toast('Nothing copied. Long-press in the box to paste.');return}addTask()};
+$('#pasteSave').onclick=async()=>{
+  if(!txt.value.trim()){try{const c=((await navigator.clipboard.readText())||'').trim(),last=((tasks[0]||{}).text||'').trim();
+    if(c&&c===last){toast('Already saved');return}}catch(e){}}   // same message tapped twice
+  const ok=await doPaste();if(!ok&&!txt.value.trim()){txt.focus();toast('Nothing copied. Long-press in the box to paste.');return}addTask()};
 txt.addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData)?.getData('text');if(t)setTimeout(()=>sniff(t),0)});
 txt.addEventListener('input',()=>{txt.classList.remove('bad');saveDraft()});
 // Name suggestions from earlier tasks (newest first): tap a chip or pick while typing
@@ -538,7 +542,7 @@ let openedByShare=false;
 
 // start
 refreshSugg();
-counts();badge();txt.focus();
+counts();badge();if(openList)show('list');else txt.focus();
 setTimeout(()=>{sync();pull()},50);
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js');
 })();

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Quick Follow-up</title>
+<link rel="manifest" href="manifest-quick.json">
+<link rel="icon" href="icon-quick-192.png">
+<link rel="apple-touch-icon" href="icon-quick-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Quick FU">
+<style>
+:root{--ac:#0f8a7e;--ac2:#0b6f66;--act:#e7f5f2;--acl:#cfe9e3;--ink:#1f2933;--mu:#5d6876;--fa:#8b95a3;--ln:#e3e8ee;--fb:#d3dae3;--pg:#f7f9fb;--ok:#1a7f45;--okt:#e9f7ef;--wa:#8a5a00;--wat:#fff7e3;--er:#b3261e}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{font:15px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif;color:var(--ink);background:var(--pg);touch-action:manipulation;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+button,textarea{font:inherit;color:inherit}
+.wrap{max-width:560px;margin:0 auto;padding:12px 14px 24px}
+.top{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.top b{flex:1;font-size:17px}
+.sync{font-size:12px;padding:4px 9px;border-radius:99px;background:var(--okt);color:var(--ok);border:0;cursor:pointer}
+.sync.wait{background:var(--wat);color:var(--wa)}.sync.off{background:#eef1f4;color:var(--mu)}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.pv{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 12px;border:1px solid var(--fb);border-radius:99px;background:#fff;font-weight:600;color:var(--mu);cursor:pointer;user-select:none}
+.pv input{width:19px;height:19px;margin:0;accent-color:#3d4657}
+.pv:has(input:checked){background:#eef0f3;border-color:#3d4657;color:var(--ink)}
+.seg{display:inline-flex;background:#fff;border:1px solid var(--fb);border-radius:99px;padding:3px;margin-left:auto}
+.seg button{border:0;background:none;min-height:38px;padding:0 14px;border-radius:99px;font-weight:600;color:var(--mu);cursor:pointer}
+.seg button.on{background:var(--act);color:var(--ac2)}
+textarea{width:100%;min-height:120px;font-size:16px;line-height:1.45;border:1px solid var(--fb);border-radius:10px;padding:10px 12px;background:#fff;outline:0;resize:vertical}
+textarea:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acl)}
+textarea.bad{border-color:var(--er)}
+.btns{display:flex;gap:8px;margin-top:10px}
+.btn{flex:1;min-height:50px;border-radius:10px;border:1px solid var(--fb);background:#fff;font-weight:700;font-size:16px;cursor:pointer}
+.btn.pri{flex:2;background:var(--ac);border-color:var(--ac);color:#fff}
+.btn.pri:active{background:var(--ac2)}
+.hint{color:var(--fa);font-size:12px;margin-top:6px}
+.all{display:block;text-align:center;margin-top:18px;color:var(--ac2);font-weight:600;text-decoration:none;padding:10px}
+.link{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:14px;margin-bottom:12px}
+.link input{width:100%;min-height:42px;border:1px solid var(--fb);border-radius:8px;padding:8px 10px;margin:8px 0;font-size:16px}
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(160%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;transition:transform .18s;visibility:hidden;max-width:92vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0);visibility:visible}
+.toast b{color:#9fe3d7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><b>Quick Follow-up</b><button class="sync off" id="sync">Not linked</button></div>
+  <div class="link" id="link" hidden>
+    Paste your setup link once (the one ending in <b>&amp;k=…</b>):
+    <input id="lk" placeholder="https://…github.io/MDFolloup/#u=…&k=…" autocomplete="off">
+    <button class="btn pri" id="lkb" style="width:100%">Link</button>
+  </div>
+  <div class="row">
+    <label class="pv"><input type="checkbox" id="priv" checked><span>🔒 Private</span></label>
+    <div class="seg" id="org"><button data-v="Energy" class="on">Energy</button><button data-v="RCD">RCD</button><button data-v="Other">Other</button></div>
+  </div>
+  <textarea id="txt" placeholder="Paste or type the message…" enterkeyhint="done"></textarea>
+  <div class="btns">
+    <button class="btn pri" id="ps">Paste &amp; Save</button>
+    <button class="btn" id="sv">Save ↵</button>
+  </div>
+  <div class="hint">Enter saves · Shift + Enter for a new line · follow-up in 1 day</div>
+  <a class="all" href="index.html#list">All issues →</a>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const K={t:'fu.tasks',q:'fu.queue',c:'fu.cfg'};   // same store as the full app, so both show the same tasks
+const load=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
+const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const qid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+let cfg=load(K.c,{}),syncing=false,tries=0,retryT,tt,org='Energy';
+if(location.hash.length>3){const p=new URLSearchParams(location.hash.slice(1));if(p.get('u')&&p.get('k')){cfg={u:p.get('u'),k:p.get('k')};store(K.c,cfg)}history.replaceState(null,'',location.pathname)}
+const toast=h=>{const t=$('#toast');t.innerHTML=h;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2000)};
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const txt=$('#txt');
+
+// office: Energy / RCD / Other
+$('#org').onclick=e=>{const b=e.target.closest('button');if(!b)return;org=b.dataset.v;[...$('#org').children].forEach(x=>x.classList.toggle('on',x===b))};
+
+function save(){
+  const t=txt.value.trim();if(!t){txt.classList.add('bad');txt.focus();toast('Paste or type the message first');return}
+  txt.classList.remove('bad');
+  const now=new Date(),due=new Date();due.setDate(due.getDate()+1);
+  const task={id:'T'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),created:now.toISOString(),text:t,org,from:'',name:'',source:'',
+    due:ymd(due),urgent:'',status:'Open',doneOn:'',updated:now.toISOString(),remarks:'',private:$('#priv').checked?'Yes':''};
+  const ts=load(K.t,[]);ts.unshift(task);store(K.t,ts);
+  const q=load(K.q,[]);q.push({op:'add',t:task,qid:qid()});store(K.q,q);
+  txt.value='';$('#priv').checked=true;org='Energy';[...$('#org').children].forEach(x=>x.classList.toggle('on',x.dataset.v==='Energy'));
+  toast('Saved'+(task.private?' · 🔒 private':'')+' · follow up <b>tomorrow</b>');txt.focus();sync();
+}
+$('#sv').onclick=save;
+$('#ps').onclick=async()=>{
+  try{const c=((await navigator.clipboard.readText())||'').trim();
+    const last=(load(K.t,[])[0]||{}).text||'';
+    if(c&&!txt.value.trim()&&c===last.trim()){toast('Already saved');return}   // same message tapped twice
+    if(c)txt.value=(txt.value.trim()?txt.value.trim()+'\n':'')+c}catch(e){}
+  if(!txt.value.trim()){txt.focus();toast('Nothing copied. Long-press in the box to paste.');return}
+  save()};
+txt.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();save()}});
+txt.addEventListener('input',()=>txt.classList.remove('bad'));
+
+// saving to the sheet (same way as the full app)
+function badge(){const s=$('#sync'),q=load(K.q,[]).length,f=load('fu.failed',[]).length;s.className='sync';
+  if(!cfg.u){s.classList.add('off');s.textContent='Not linked';$('#link').hidden=false;return}
+  $('#link').hidden=true;
+  if(q){s.classList.add('wait');s.textContent=q+' waiting';return}
+  if(f){s.classList.add('wait');s.textContent='⚠ '+f+' not saved';return}
+  s.textContent='✓ Synced'}
+$('#sync').onclick=()=>{const f=load('fu.failed',[]).length;if(f&&!load(K.q,[]).length){location.href='index.html';return}tries=0;sync();toast('Saving…')};
+async function sync(){badge();const q=load(K.q,[]);if(!cfg.u||syncing||!q.length)return;
+  syncing=true;const batch=q.slice(0,50);
+  try{const r=await fetch(cfg.u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:cfg.k,ops:batch})});
+    const j=await r.json();if(!j.ok)throw new Error(j.error||'server');
+    const sent=new Set(batch.map(o=>o.qid));store(K.q,load(K.q,[]).filter(o=>!sent.has(o.qid)));tries=0;syncing=false;badge();if(load(K.q,[]).length)sync();
+  }catch(e){syncing=false;badge();if(e.message==='key'){toast('The key is not right. Paste the setup link again.');return}
+    clearTimeout(retryT);retryT=setTimeout(sync,[4e3,15e3,60e3][Math.min(tries++,2)])}}
+$('#lkb').onclick=()=>{const v=$('#lk').value.trim(),i=v.indexOf('#u=');if(i<0){$('#lk').style.borderColor='#b3261e';return}
+  const p=new URLSearchParams(v.slice(i+1));cfg={u:p.get('u'),k:p.get('k')};store(K.c,cfg);badge();toast('Linked');sync()};
+window.addEventListener('storage',e=>{if(e.key===K.q||e.key==='fu.failed')badge();if(e.key===K.c){cfg=load(K.c,{});badge()}});
+window.addEventListener('online',()=>{tries=0;sync()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
+
+badge();txt.focus();sync();
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js');
+})();
+</script>
+</body>
+</html>
