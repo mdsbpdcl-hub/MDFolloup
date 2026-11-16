@@ -1,6 +1,6 @@
 // Opens instantly from cache, refreshes the cache in the background.
-const C = 'fu-v37';
-const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './bulletin.html', './sticky.html', './compact.html', './manifest-quick.json', './icon-quick-192.png', './icon-quick-512.png'];
+const C = 'fu-v38';
+const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './bulletin.html', './sticky.html', './quick/', './quick/manifest.json', './icon-quick-192.png', './icon-quick-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))));

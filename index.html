@@ -21,6 +21,7 @@ header{background:#fff;border-bottom:1px solid var(--ln);position:sticky;top:0;z
 .hrow{display:flex;align-items:center;gap:10px;padding:10px 0 8px}
 .logo{width:38px;height:38px;border-radius:10px;background:var(--act);display:grid;place-items:center;flex:none}
 .ttl{flex:1;min-width:0}.ttl b{display:block;font-size:17px;line-height:1.2}.ttl span{color:var(--mu);font-size:12px}
+.back{font-size:13px;font-weight:700;color:var(--ac2);text-decoration:none;padding:6px 10px;border:1px solid var(--acl);border-radius:99px;background:var(--act);white-space:nowrap}
 .sync{font-size:12px;padding:4px 9px;border-radius:99px;background:var(--okt);color:var(--ok);white-space:nowrap;border:0;cursor:pointer}
 .sync.wait{background:var(--wat);color:var(--wa)}.sync.off{background:#eef1f4;color:var(--mu)}
 .icon{width:40px;height:40px;border:0;background:none;border-radius:8px;display:grid;place-items:center;cursor:pointer;color:var(--mu)}
@@ -128,7 +129,7 @@ footer{text-align:center;color:var(--fa);font-size:12px;padding:10px 0 24px}
   <div class="hrow">
     <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0f8a7e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
     <div class="ttl"><b>Follow-ups</b><span>Note it now, follow up on time</span></div>
-    <button class="sync off" id="sync" title="Sync now">Not linked</button>
+    <a class="back hide" id="backQ" href="quick/">← Quick</a><button class="sync off" id="sync" title="Sync now">Not linked</button>
     <button class="icon" id="gear" aria-label="Settings"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
   </div>
   <div class="tabs">
@@ -233,7 +234,7 @@ const qid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);   /
 let tasks=load(K.t,[]), queue=load(K.q,[]).map(o=>o.qid?o:{...o,qid:qid()}), cfg=load(K.c,{}), filt='open', hold=0, syncing=false, retryT=null, tries=0;
 
 // one-time link setup: index.html#u=<server>&k=<key>
-const openList=location.hash==='#list';   // link from Quick Follow-up: open the Follow-ups list
+const openList=location.hash==='#list',fromQuick=new URLSearchParams(location.search).get('from')==='quick';   // link from Quick Follow-up: open the Follow-ups list
 if(location.hash.length>3){const p=new URLSearchParams(location.hash.slice(1));
   if(p.get('u')&&p.get('k')){cfg={u:p.get('u'),k:p.get('k')};store(K.c,cfg)}
   history.replaceState(null,'',location.pathname+location.search)}
@@ -542,7 +543,7 @@ let openedByShare=false;
 
 // start
 refreshSugg();
-counts();badge();if(openList)show('list');else txt.focus();
+counts();badge();if(fromQuick)$('#backQ').classList.remove('hide');if(openList)show('list');else txt.focus();
 setTimeout(()=>{sync();pull()},50);
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js');
 })();
