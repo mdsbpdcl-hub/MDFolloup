@@ -1,0 +1,14 @@
+{
+  "id": "./compact.html",
+  "name": "Quick Follow-up",
+  "short_name": "Quick FU",
+  "start_url": "./compact.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f9fb",
+  "theme_color": "#ffffff",
+  "icons": [
+    {"src": "icon-quick-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-quick-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
